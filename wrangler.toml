@@ -1,0 +1,3 @@
+name = "sand-castle-crashers"
+main = "sand_castle_worker.js"
+compatibility_date = "2025-01-01"
