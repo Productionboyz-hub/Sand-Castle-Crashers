@@ -1,0 +1,3604 @@
+{
+  "asl_history": [
+    {
+      "id": 1783632179278,
+      "date": "Jul 9, 2026 – 2:10 PM",
+      "opp": "Morocco",
+      "home": 2,
+      "away": 1,
+      "halfLen": 5,
+      "compType": "friendly",
+      "players": [
+        {
+          "num": 10,
+          "name": "Flynt Philburn",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 10,
+          "passes": 11,
+          "yc": 1,
+          "rc": 0,
+          "inj": 0,
+          "secs": 600,
+          "added": false
+        },
+        {
+          "num": 7,
+          "name": "Augustine Vaca",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 3,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 452,
+          "added": false
+        },
+        {
+          "num": 3,
+          "name": "Bryce Johnson",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 3,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 600,
+          "added": false
+        },
+        {
+          "num": 13,
+          "name": "Rowan Peterson",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 3,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 448,
+          "added": false
+        },
+        {
+          "num": 11,
+          "name": "Bradley Paguada",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 3,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 600,
+          "added": false
+        },
+        {
+          "num": 8,
+          "name": "Juan Arana",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 3,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 445,
+          "added": false
+        },
+        {
+          "num": 30,
+          "name": "Nathan Gonzalez",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 3,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 446,
+          "added": false
+        },
+        {
+          "num": 4,
+          "name": "Paolo Cox",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 300,
+          "added": false
+        },
+        {
+          "num": 5,
+          "name": "Gabe Nakada-Gantt",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 300,
+          "added": false
+        },
+        {
+          "num": 29,
+          "name": "Asaiah Galindo",
+          "goals": 1,
+          "assists": 0,
+          "corners": 0,
+          "shots": 2,
+          "saves": 0,
+          "passes": 4,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 300,
+          "sub": true,
+          "added": false
+        },
+        {
+          "num": 1,
+          "name": "Zion Brown",
+          "goals": 0,
+          "assists": 0,
+          "corners": 1,
+          "shots": 1,
+          "saves": 0,
+          "passes": 3,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 300,
+          "sub": true,
+          "added": false
+        },
+        {
+          "num": 12,
+          "name": "Judah Oliver",
+          "goals": 1,
+          "assists": 0,
+          "corners": 0,
+          "shots": 1,
+          "saves": 0,
+          "passes": 1,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 155,
+          "sub": true,
+          "added": false
+        },
+        {
+          "num": 23,
+          "name": "Adrian De Leon",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 2,
+          "yc": 1,
+          "rc": 0,
+          "inj": 0,
+          "secs": 154,
+          "sub": true,
+          "added": false
+        },
+        {
+          "num": 2,
+          "name": "Mateo Rivera",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 3,
+          "yc": 0,
+          "rc": 0,
+          "inj": 1,
+          "secs": 300,
+          "sub": true,
+          "added": false
+        }
+      ],
+      "pk": {
+        "home": 0,
+        "away": 0,
+        "kickers": []
+      },
+      "notes": "",
+      "log": [
+        {
+          "t": "00:00",
+          "m": "▶ 1st Half started"
+        },
+        {
+          "t": "00:53",
+          "m": "🎯 Shot #29 Asaiah Galindo (00:53)"
+        },
+        {
+          "t": "00:56",
+          "m": "🔵 Pass #1 Zion Brown (00:56)"
+        },
+        {
+          "t": "00:57",
+          "m": "🔵 Pass #11 Bradley Paguada (00:57)"
+        },
+        {
+          "t": "01:02",
+          "m": "🔵 Pass #2 Mateo Rivera (01:02)"
+        },
+        {
+          "t": "01:04",
+          "m": "🔵 Pass #3 Bryce Johnson (01:04)"
+        },
+        {
+          "t": "01:06",
+          "m": "🔵 Pass #2 Mateo Rivera (01:06)"
+        },
+        {
+          "t": "01:08",
+          "m": "🔵 Pass #11 Bradley Paguada (01:08)"
+        },
+        {
+          "t": "01:09",
+          "m": "🔵 Pass #29 Asaiah Galindo (01:09)"
+        },
+        {
+          "t": "01:12",
+          "m": "⚽ Goal! #29 Asaiah Galindo (01:12)"
+        },
+        {
+          "t": "01:21",
+          "m": "🟡 Yellow #23 Adrian De Leon (01:21)"
+        },
+        {
+          "t": "01:28",
+          "m": "🥅 Save #10 Flynt Philburn (01:28)"
+        },
+        {
+          "t": "01:31",
+          "m": "🥅 Save #10 Flynt Philburn (01:31)"
+        },
+        {
+          "t": "01:34",
+          "m": "🔵 Pass #3 Bryce Johnson (01:34)"
+        },
+        {
+          "t": "01:35",
+          "m": "🔵 Pass #7 Augustine Vaca (01:35)"
+        },
+        {
+          "t": "01:38",
+          "m": "🔵 Pass #12 Judah Oliver (01:38)"
+        },
+        {
+          "t": "01:39",
+          "m": "🔵 Pass #23 Adrian De Leon (01:39)"
+        },
+        {
+          "t": "01:40",
+          "m": "🔵 Pass #1 Zion Brown (01:40)"
+        },
+        {
+          "t": "01:43",
+          "m": "🚩 Corner #1 Zion Brown (01:43)"
+        },
+        {
+          "t": "01:46",
+          "m": "🎯 Shot #1 Zion Brown (01:46)"
+        },
+        {
+          "t": "01:56",
+          "m": "🔵 Pass #10 Flynt Philburn (01:56)"
+        },
+        {
+          "t": "01:57",
+          "m": "🔵 Pass #10 Flynt Philburn (01:57)"
+        },
+        {
+          "t": "01:58",
+          "m": "🔵 Pass #10 Flynt Philburn (01:58)"
+        },
+        {
+          "t": "01:59",
+          "m": "🔵 Pass #3 Bryce Johnson (01:59)"
+        },
+        {
+          "t": "01:59",
+          "m": "🔵 Pass #7 Augustine Vaca (01:59)"
+        },
+        {
+          "t": "02:00",
+          "m": "🔵 Pass #11 Bradley Paguada (02:00)"
+        },
+        {
+          "t": "02:00",
+          "m": "🔵 Pass #2 Mateo Rivera (02:00)"
+        },
+        {
+          "t": "02:01",
+          "m": "🔵 Pass #23 Adrian De Leon (02:01)"
+        },
+        {
+          "t": "02:02",
+          "m": "🔵 Pass #1 Zion Brown (02:02)"
+        },
+        {
+          "t": "02:16",
+          "m": "⚽ Goal! #12 Judah Oliver (02:16)"
+        },
+        {
+          "t": "02:31",
+          "m": "#13 Rowan Peterson ready — tap a field player"
+        },
+        {
+          "t": "02:32",
+          "m": "Sub: #13 Rowan Peterson on for #7 Augustine Vaca (02:32)"
+        },
+        {
+          "t": "02:33",
+          "m": "#30 Nathan Gonzalez ready — tap a field player"
+        },
+        {
+          "t": "02:34",
+          "m": "Sub: #30 Nathan Gonzalez on for #23 Adrian De Leon (02:34)"
+        },
+        {
+          "t": "02:35",
+          "m": "#8 Juan Arana ready — tap a field player"
+        },
+        {
+          "t": "02:35",
+          "m": "Sub: #8 Juan Arana on for #12 Judah Oliver (02:35)"
+        },
+        {
+          "t": "02:37",
+          "m": "🔵 Pass #30 Nathan Gonzalez (02:37)"
+        },
+        {
+          "t": "02:38",
+          "m": "🔵 Pass #13 Rowan Peterson (02:38)"
+        },
+        {
+          "t": "02:38",
+          "m": "🔵 Pass #8 Juan Arana (02:38)"
+        },
+        {
+          "t": "02:39",
+          "m": "🔵 Pass #30 Nathan Gonzalez (02:39)"
+        },
+        {
+          "t": "02:39",
+          "m": "🔵 Pass #13 Rowan Peterson (02:39)"
+        },
+        {
+          "t": "02:40",
+          "m": "🔵 Pass #8 Juan Arana (02:40)"
+        },
+        {
+          "t": "02:40",
+          "m": "🔵 Pass #30 Nathan Gonzalez (02:40)"
+        },
+        {
+          "t": "02:40",
+          "m": "🔵 Pass #13 Rowan Peterson (02:40)"
+        },
+        {
+          "t": "02:41",
+          "m": "🔵 Pass #8 Juan Arana (02:41)"
+        },
+        {
+          "t": "02:51",
+          "m": "🔵 Pass #29 Asaiah Galindo (02:51)"
+        },
+        {
+          "t": "02:52",
+          "m": "🔵 Pass #29 Asaiah Galindo (02:52)"
+        },
+        {
+          "t": "03:12",
+          "m": "🥅 Save #10 Flynt Philburn (03:12)"
+        },
+        {
+          "t": "03:54",
+          "m": "🟡 Yellow #10 Flynt Philburn (03:54)"
+        },
+        {
+          "t": "03:58",
+          "m": "🩹 Injury #2 Mateo Rivera (03:58)"
+        },
+        {
+          "t": "05:00",
+          "m": "⏱ Halftime — 05:00"
+        },
+        {
+          "t": "00:00",
+          "m": "▶ 2nd Half — clock reset to 00:00"
+        },
+        {
+          "t": "00:00",
+          "m": "#5 Gabe Nakada-Gantt ready — tap a field player"
+        },
+        {
+          "t": "00:00",
+          "m": "Sub: #5 Gabe Nakada-Gantt on for #1 Zion Brown (00:00)"
+        },
+        {
+          "t": "00:00",
+          "m": "🔵 Pass #29 Asaiah Galindo (00:00)"
+        },
+        {
+          "t": "00:00",
+          "m": "#4 Paolo Cox ready — tap a field player"
+        },
+        {
+          "t": "00:00",
+          "m": "Sub: #4 Paolo Cox on for #29 Asaiah Galindo (00:00)"
+        },
+        {
+          "t": "00:00",
+          "m": "#7 Augustine Vaca ready — tap a field player"
+        },
+        {
+          "t": "00:00",
+          "m": "Sub: #7 Augustine Vaca on for #2 Mateo Rivera (00:00)"
+        },
+        {
+          "t": "00:03",
+          "m": "🔵 Pass #7 Augustine Vaca (00:03)"
+        },
+        {
+          "t": "03:30",
+          "m": "🔵 Pass #10 Flynt Philburn (03:30)"
+        },
+        {
+          "t": "03:31",
+          "m": "🔵 Pass #10 Flynt Philburn (03:31)"
+        },
+        {
+          "t": "03:32",
+          "m": "🔵 Pass #10 Flynt Philburn (03:32)"
+        },
+        {
+          "t": "03:32",
+          "m": "🔵 Pass #10 Flynt Philburn (03:32)"
+        },
+        {
+          "t": "03:32",
+          "m": "🔵 Pass #10 Flynt Philburn (03:32)"
+        },
+        {
+          "t": "03:35",
+          "m": "🥅 Save #10 Flynt Philburn (03:35)"
+        },
+        {
+          "t": "03:37",
+          "m": "🥅 Save #10 Flynt Philburn (03:37)"
+        },
+        {
+          "t": "03:39",
+          "m": "🥅 Save #10 Flynt Philburn (03:39)"
+        },
+        {
+          "t": "03:40",
+          "m": "🔵 Pass #10 Flynt Philburn (03:40)"
+        },
+        {
+          "t": "03:41",
+          "m": "🔵 Pass #10 Flynt Philburn (03:41)"
+        },
+        {
+          "t": "03:43",
+          "m": "🥅 Save #10 Flynt Philburn (03:43)"
+        },
+        {
+          "t": "03:44",
+          "m": "🔵 Pass #10 Flynt Philburn (03:44)"
+        },
+        {
+          "t": "03:47",
+          "m": "🥅 Save #10 Flynt Philburn (03:47)"
+        },
+        {
+          "t": "03:50",
+          "m": "🥅 Save #10 Flynt Philburn (03:50)"
+        },
+        {
+          "t": "03:52",
+          "m": "🥅 Save #10 Flynt Philburn (03:52)"
+        },
+        {
+          "t": "05:00",
+          "m": "🏁 End of Regulation — 05:00"
+        }
+      ],
+      "matchInfo": {
+        "opponent": "Morocco",
+        "date": "2026-07-09",
+        "time": "14:11",
+        "place": "Casablanca",
+        "matchType": "friendly"
+      }
+    },
+    {
+      "id": 1783631020800,
+      "date": "Jul 9, 2026 – 1:51 PM",
+      "opp": "France",
+      "home": 3,
+      "away": 2,
+      "halfLen": 5,
+      "compType": "friendly",
+      "players": [
+        {
+          "num": 5,
+          "name": "Gabe Nakada-Gantt",
+          "goals": 1,
+          "assists": 0,
+          "corners": 0,
+          "shots": 2,
+          "saves": 0,
+          "passes": 3,
+          "yc": 1,
+          "rc": 0,
+          "inj": 0,
+          "secs": 440,
+          "added": false
+        },
+        {
+          "num": 11,
+          "name": "Bradley Paguada",
+          "goals": 0,
+          "assists": 2,
+          "corners": 0,
+          "shots": 2,
+          "saves": 0,
+          "passes": 3,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 438,
+          "added": false
+        },
+        {
+          "num": 2,
+          "name": "Mateo Rivera",
+          "goals": 0,
+          "assists": 0,
+          "corners": 1,
+          "shots": 0,
+          "saves": 0,
+          "passes": 3,
+          "yc": 1,
+          "rc": 0,
+          "inj": 0,
+          "secs": 409,
+          "added": false
+        },
+        {
+          "num": 13,
+          "name": "Rowan Peterson",
+          "goals": 1,
+          "assists": 0,
+          "corners": 0,
+          "shots": 2,
+          "saves": 0,
+          "passes": 3,
+          "yc": 1,
+          "rc": 0,
+          "inj": 0,
+          "secs": 512,
+          "added": false
+        },
+        {
+          "num": 29,
+          "name": "Asaiah Galindo",
+          "goals": 1,
+          "assists": 0,
+          "corners": 0,
+          "shots": 1,
+          "saves": 0,
+          "passes": 3,
+          "yc": 1,
+          "rc": 0,
+          "inj": 0,
+          "secs": 331,
+          "added": false
+        },
+        {
+          "num": 3,
+          "name": "Bryce Johnson",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 3,
+          "yc": 1,
+          "rc": 0,
+          "inj": 0,
+          "secs": 407,
+          "added": false
+        },
+        {
+          "num": 1,
+          "name": "Zion Brown",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 1,
+          "saves": 0,
+          "passes": 3,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 514,
+          "added": false
+        },
+        {
+          "num": 12,
+          "name": "Judah Oliver",
+          "goals": 0,
+          "assists": 0,
+          "corners": 1,
+          "shots": 0,
+          "saves": 0,
+          "passes": 3,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 321,
+          "added": false
+        },
+        {
+          "num": 30,
+          "name": "Nathan Gonzalez",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 3,
+          "yc": 1,
+          "rc": 0,
+          "inj": 0,
+          "secs": 510,
+          "added": false
+        },
+        {
+          "num": 10,
+          "name": "Flynt Philburn",
+          "goals": 0,
+          "assists": 0,
+          "corners": 1,
+          "shots": 0,
+          "saves": 5,
+          "passes": 3,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 351,
+          "sub": true,
+          "added": false
+        },
+        {
+          "num": 4,
+          "name": "Paolo Cox",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 1,
+          "saves": 0,
+          "passes": 5,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 354,
+          "sub": true,
+          "added": false
+        },
+        {
+          "num": 8,
+          "name": "Juan Arana",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 5,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 359,
+          "sub": true,
+          "added": false
+        },
+        {
+          "num": 7,
+          "name": "Augustine Vaca",
+          "goals": 0,
+          "assists": 0,
+          "corners": 1,
+          "shots": 0,
+          "saves": 0,
+          "passes": 1,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 88,
+          "sub": true,
+          "added": false
+        },
+        {
+          "num": 23,
+          "name": "Adrian De Leon",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 1,
+          "saves": 0,
+          "passes": 5,
+          "yc": 1,
+          "rc": 0,
+          "inj": 0,
+          "secs": 365,
+          "sub": true,
+          "added": false
+        }
+      ],
+      "pk": {
+        "home": 0,
+        "away": 0,
+        "kickers": []
+      },
+      "notes": "",
+      "log": [
+        {
+          "t": "00:00",
+          "m": "▶ 1st Half started"
+        },
+        {
+          "t": "00:23",
+          "m": "🔵 Pass #23 Adrian De Leon (00:23)"
+        },
+        {
+          "t": "00:25",
+          "m": "🔵 Pass #29 Asaiah Galindo (00:25)"
+        },
+        {
+          "t": "00:27",
+          "m": "🔵 Pass #12 Judah Oliver (00:27)"
+        },
+        {
+          "t": "00:28",
+          "m": "🔵 Pass #7 Augustine Vaca (00:28)"
+        },
+        {
+          "t": "00:29",
+          "m": "🔵 Pass #11 Bradley Paguada (00:29)"
+        },
+        {
+          "t": "00:30",
+          "m": "🔵 Pass #5 Gabe Nakada-Gantt (00:30)"
+        },
+        {
+          "t": "00:31",
+          "m": "🔵 Pass #10 Flynt Philburn (00:31)"
+        },
+        {
+          "t": "00:32",
+          "m": "🔵 Pass #4 Paolo Cox (00:32)"
+        },
+        {
+          "t": "00:33",
+          "m": "🔵 Pass #8 Juan Arana (00:33)"
+        },
+        {
+          "t": "00:37",
+          "m": "⚽ Goal! #29 Asaiah Galindo (00:37)"
+        },
+        {
+          "t": "00:53",
+          "m": "🎯 Shot #23 Adrian De Leon (00:53)"
+        },
+        {
+          "t": "00:57",
+          "m": "🔵 Pass #8 Juan Arana (00:57)"
+        },
+        {
+          "t": "01:15",
+          "m": "🎯 Shot #11 Bradley Paguada (01:15)"
+        },
+        {
+          "t": "01:19",
+          "m": "🚩 Corner #12 Judah Oliver (01:19)"
+        },
+        {
+          "t": "01:21",
+          "m": "🚩 Corner #7 Augustine Vaca (01:21)"
+        },
+        {
+          "t": "01:25",
+          "m": "#1 Zion Brown ready — tap a field player"
+        },
+        {
+          "t": "01:26",
+          "m": "Sub: #1 Zion Brown on for #12 Judah Oliver (01:26)"
+        },
+        {
+          "t": "01:27",
+          "m": "#13 Rowan Peterson ready — tap a field player"
+        },
+        {
+          "t": "01:28",
+          "m": "Sub: #13 Rowan Peterson on for #7 Augustine Vaca (01:28)"
+        },
+        {
+          "t": "01:29",
+          "m": "#30 Nathan Gonzalez ready — tap a field player"
+        },
+        {
+          "t": "01:30",
+          "m": "Sub: #30 Nathan Gonzalez on for #29 Asaiah Galindo (01:30)"
+        },
+        {
+          "t": "01:49",
+          "m": "🥅 Save #10 Flynt Philburn (01:49)"
+        },
+        {
+          "t": "01:52",
+          "m": "🥅 Save #10 Flynt Philburn (01:52)"
+        },
+        {
+          "t": "02:10",
+          "m": "🥅 Save #10 Flynt Philburn (02:10)"
+        },
+        {
+          "t": "02:19",
+          "m": "🎯 Shot #5 Gabe Nakada-Gantt (02:19)"
+        },
+        {
+          "t": "02:22",
+          "m": "🔵 Pass #4 Paolo Cox (02:22)"
+        },
+        {
+          "t": "02:23",
+          "m": "🔵 Pass #8 Juan Arana (02:23)"
+        },
+        {
+          "t": "02:26",
+          "m": "🎯 Shot #11 Bradley Paguada (02:26)"
+        },
+        {
+          "t": "02:32",
+          "m": "🎯 Shot #4 Paolo Cox (02:32)"
+        },
+        {
+          "t": "02:36",
+          "m": "🎯 Shot #1 Zion Brown (02:36)"
+        },
+        {
+          "t": "02:40",
+          "m": "🎯 Shot #13 Rowan Peterson (02:40)"
+        },
+        {
+          "t": "02:54",
+          "m": "⚽ Goal! #5 Gabe Nakada-Gantt (02:54)"
+        },
+        {
+          "t": "02:56",
+          "m": "⚽ Goal! #13 Rowan Peterson (02:56)"
+        },
+        {
+          "t": "03:00",
+          "m": "👟 Assist #11 Bradley Paguada (03:00)"
+        },
+        {
+          "t": "03:02",
+          "m": "👟 Assist #11 Bradley Paguada (03:02)"
+        },
+        {
+          "t": "03:10",
+          "m": "#2 Mateo Rivera ready — tap a field player"
+        },
+        {
+          "t": "03:11",
+          "m": "Sub: #2 Mateo Rivera on for #5 Gabe Nakada-Gantt (03:11)"
+        },
+        {
+          "t": "03:12",
+          "m": "#3 Bryce Johnson ready — tap a field player"
+        },
+        {
+          "t": "03:13",
+          "m": "Sub: #3 Bryce Johnson on for #11 Bradley Paguada (03:13)"
+        },
+        {
+          "t": "03:56",
+          "m": "🔵 Pass #1 Zion Brown (03:56)"
+        },
+        {
+          "t": "03:57",
+          "m": "🔵 Pass #13 Rowan Peterson (03:57)"
+        },
+        {
+          "t": "03:58",
+          "m": "🔵 Pass #2 Mateo Rivera (03:58)"
+        },
+        {
+          "t": "03:58",
+          "m": "🔵 Pass #3 Bryce Johnson (03:58)"
+        },
+        {
+          "t": "03:59",
+          "m": "🔵 Pass #23 Adrian De Leon (03:59)"
+        },
+        {
+          "t": "03:59",
+          "m": "🔵 Pass #30 Nathan Gonzalez (03:59)"
+        },
+        {
+          "t": "04:00",
+          "m": "🔵 Pass #8 Juan Arana (04:00)"
+        },
+        {
+          "t": "04:00",
+          "m": "🔵 Pass #4 Paolo Cox (04:00)"
+        },
+        {
+          "t": "04:01",
+          "m": "🔵 Pass #10 Flynt Philburn (04:01)"
+        },
+        {
+          "t": "04:12",
+          "m": "🥅 Save #10 Flynt Philburn (04:12)"
+        },
+        {
+          "t": "04:16",
+          "m": "🥅 Save #10 Flynt Philburn (04:16)"
+        },
+        {
+          "t": "05:00",
+          "m": "⏱ Halftime — 05:00"
+        },
+        {
+          "t": "00:00",
+          "m": "▶ 2nd Half — clock reset to 00:00"
+        },
+        {
+          "t": "00:08",
+          "m": "🔵 Pass #4 Paolo Cox (00:08)"
+        },
+        {
+          "t": "00:09",
+          "m": "🔵 Pass #2 Mateo Rivera (00:09)"
+        },
+        {
+          "t": "00:10",
+          "m": "🔵 Pass #13 Rowan Peterson (00:10)"
+        },
+        {
+          "t": "00:16",
+          "m": "🟡 Yellow #3 Bryce Johnson (00:16)"
+        },
+        {
+          "t": "00:23",
+          "m": "🟡 Yellow #23 Adrian De Leon (00:23)"
+        },
+        {
+          "t": "00:27",
+          "m": "🔵 Pass #23 Adrian De Leon (00:27)"
+        },
+        {
+          "t": "00:28",
+          "m": "🔵 Pass #30 Nathan Gonzalez (00:28)"
+        },
+        {
+          "t": "00:28",
+          "m": "🔵 Pass #8 Juan Arana (00:28)"
+        },
+        {
+          "t": "00:29",
+          "m": "🔵 Pass #3 Bryce Johnson (00:29)"
+        },
+        {
+          "t": "00:29",
+          "m": "🔵 Pass #1 Zion Brown (00:29)"
+        },
+        {
+          "t": "00:30",
+          "m": "🔵 Pass #2 Mateo Rivera (00:30)"
+        },
+        {
+          "t": "00:30",
+          "m": "🔵 Pass #4 Paolo Cox (00:30)"
+        },
+        {
+          "t": "00:30",
+          "m": "🔵 Pass #10 Flynt Philburn (00:30)"
+        },
+        {
+          "t": "00:31",
+          "m": "🔵 Pass #23 Adrian De Leon (00:31)"
+        },
+        {
+          "t": "00:31",
+          "m": "🔵 Pass #23 Adrian De Leon (00:31)"
+        },
+        {
+          "t": "00:32",
+          "m": "🔵 Pass #30 Nathan Gonzalez (00:32)"
+        },
+        {
+          "t": "00:41",
+          "m": "🚩 Corner #10 Flynt Philburn (00:41)"
+        },
+        {
+          "t": "00:45",
+          "m": "🚩 Corner #2 Mateo Rivera (00:45)"
+        },
+        {
+          "t": "00:50",
+          "m": "#5 Gabe Nakada-Gantt ready — tap a field player"
+        },
+        {
+          "t": "00:51",
+          "m": "Sub: #5 Gabe Nakada-Gantt on for #10 Flynt Philburn (00:51)"
+        },
+        {
+          "t": "00:52",
+          "m": "#11 Bradley Paguada ready — tap a field player"
+        },
+        {
+          "t": "00:54",
+          "m": "Sub: #11 Bradley Paguada on for #4 Paolo Cox (00:54)"
+        },
+        {
+          "t": "00:56",
+          "m": "#29 Asaiah Galindo ready — tap a field player"
+        },
+        {
+          "t": "00:59",
+          "m": "Sub: #29 Asaiah Galindo on for #8 Juan Arana (00:59)"
+        },
+        {
+          "t": "01:03",
+          "m": "#12 Judah Oliver ready — tap a field player"
+        },
+        {
+          "t": "01:05",
+          "m": "Sub: #12 Judah Oliver on for #23 Adrian De Leon (01:05)"
+        },
+        {
+          "t": "01:54",
+          "m": "🟡 Yellow #29 Asaiah Galindo (01:54)"
+        },
+        {
+          "t": "02:00",
+          "m": "🟡 Yellow #30 Nathan Gonzalez (02:00)"
+        },
+        {
+          "t": "02:02",
+          "m": "🟡 Yellow #2 Mateo Rivera (02:02)"
+        },
+        {
+          "t": "02:05",
+          "m": "🟡 Yellow #5 Gabe Nakada-Gantt (02:05)"
+        },
+        {
+          "t": "02:07",
+          "m": "🟡 Yellow #13 Rowan Peterson (02:07)"
+        },
+        {
+          "t": "02:10",
+          "m": "🔵 Pass #1 Zion Brown (02:10)"
+        },
+        {
+          "t": "02:19",
+          "m": "🔵 Pass #11 Bradley Paguada (02:19)"
+        },
+        {
+          "t": "02:20",
+          "m": "🔵 Pass #11 Bradley Paguada (02:20)"
+        },
+        {
+          "t": "02:30",
+          "m": "🔵 Pass #13 Rowan Peterson (02:30)"
+        },
+        {
+          "t": "02:31",
+          "m": "🔵 Pass #5 Gabe Nakada-Gantt (02:31)"
+        },
+        {
+          "t": "02:31",
+          "m": "🔵 Pass #5 Gabe Nakada-Gantt (02:31)"
+        },
+        {
+          "t": "02:43",
+          "m": "🔵 Pass #12 Judah Oliver (02:43)"
+        },
+        {
+          "t": "02:43",
+          "m": "🔵 Pass #12 Judah Oliver (02:43)"
+        },
+        {
+          "t": "02:45",
+          "m": "🔵 Pass #3 Bryce Johnson (02:45)"
+        },
+        {
+          "t": "03:06",
+          "m": "🔵 Pass #29 Asaiah Galindo (03:06)"
+        },
+        {
+          "t": "03:07",
+          "m": "🔵 Pass #29 Asaiah Galindo (03:07)"
+        },
+        {
+          "t": "05:00",
+          "m": "🏁 End of Regulation — 05:00"
+        }
+      ],
+      "matchInfo": {
+        "opponent": "France",
+        "date": "2026-07-09",
+        "time": "13:51",
+        "place": "Edward Vincent",
+        "matchType": "friendly"
+      }
+    },
+    {
+      "id": 1783476777755,
+      "date": "Jul 7, 2026 – 7:11 PM",
+      "opp": "Opponent",
+      "home": 1,
+      "away": 0,
+      "halfLen": 10,
+      "compType": "friendly",
+      "players": [
+        {
+          "num": 10,
+          "name": "Flynt Philburn",
+          "goals": 1,
+          "assists": 0,
+          "corners": 0,
+          "shots": 1,
+          "saves": 0,
+          "passes": 1,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 46,
+          "added": false
+        },
+        {
+          "num": 4,
+          "name": "Paolo Cox",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 46,
+          "added": false
+        },
+        {
+          "num": 5,
+          "name": "Gabe Nakada-Gantt",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 46,
+          "added": false
+        },
+        {
+          "num": 7,
+          "name": "Augustine Vaca",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 46,
+          "added": false
+        },
+        {
+          "num": 8,
+          "name": "Juan Arana",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 46,
+          "added": false
+        },
+        {
+          "num": 11,
+          "name": "Bradley Paguada",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 46,
+          "added": false
+        },
+        {
+          "num": 12,
+          "name": "Judah Oliver",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 46,
+          "added": false
+        },
+        {
+          "num": 23,
+          "name": "Adrian De Leon",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 46,
+          "added": false
+        },
+        {
+          "num": 29,
+          "name": "Asaiah Galindo",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 46,
+          "added": false
+        }
+      ],
+      "pk": {
+        "home": 0,
+        "away": 0,
+        "kickers": []
+      },
+      "notes": "",
+      "log": [
+        {
+          "t": "00:00",
+          "m": "▶ 1st Half started"
+        },
+        {
+          "t": "00:05",
+          "m": "🔵 Pass #10 Flynt Philburn (00:05)"
+        },
+        {
+          "t": "00:09",
+          "m": "⚽ Goal! #10 Flynt Philburn (00:09)"
+        }
+      ],
+      "matchInfo": {
+        "opponent": "",
+        "date": "",
+        "time": "",
+        "place": "",
+        "matchType": "friendly"
+      }
+    },
+    {
+      "id": 1783460812744,
+      "date": "Jul 7, 2026 – 2:43 PM",
+      "opp": "Alvaro",
+      "home": 4,
+      "away": 0,
+      "halfLen": 1,
+      "compType": "friendly",
+      "players": [
+        {
+          "num": 30,
+          "name": "Nathan Gonzalez",
+          "goals": 0,
+          "assists": 0,
+          "corners": 1,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 90,
+          "added": false
+        },
+        {
+          "num": 5,
+          "name": "Gabe Nakada-Gantt",
+          "goals": 0,
+          "assists": 0,
+          "corners": 1,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 85,
+          "added": false
+        },
+        {
+          "num": 8,
+          "name": "Juan Arana",
+          "goals": 0,
+          "assists": 0,
+          "corners": 1,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 88,
+          "added": false
+        },
+        {
+          "num": 13,
+          "name": "Rowan Peterson",
+          "goals": 0,
+          "assists": 0,
+          "corners": 1,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 92,
+          "added": false
+        },
+        {
+          "num": 11,
+          "name": "Bradley Paguada",
+          "goals": 0,
+          "assists": 0,
+          "corners": 1,
+          "shots": 0,
+          "saves": 0,
+          "passes": 1,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 4,
+          "name": "Paolo Cox",
+          "goals": 0,
+          "assists": 0,
+          "corners": 1,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 83,
+          "added": false
+        },
+        {
+          "num": 23,
+          "name": "Adrian De Leon",
+          "goals": 1,
+          "assists": 0,
+          "corners": 1,
+          "shots": 1,
+          "saves": 0,
+          "passes": 1,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 29,
+          "name": "Asaiah Galindo",
+          "goals": 1,
+          "assists": 0,
+          "corners": 1,
+          "shots": 1,
+          "saves": 0,
+          "passes": 1,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 1,
+          "name": "Zion Brown",
+          "goals": 1,
+          "assists": 0,
+          "corners": 1,
+          "shots": 1,
+          "saves": 0,
+          "passes": 1,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 12,
+          "name": "Judah Oliver",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 1,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 37,
+          "sub": true,
+          "added": false
+        },
+        {
+          "num": 2,
+          "name": "Mateo Rivera",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 1,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 35,
+          "sub": true,
+          "added": false
+        },
+        {
+          "num": 3,
+          "name": "Bryce Johnson",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 1,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 32,
+          "sub": true,
+          "added": false
+        },
+        {
+          "num": 10,
+          "name": "Flynt Philburn",
+          "goals": 1,
+          "assists": 0,
+          "corners": 0,
+          "shots": 1,
+          "saves": 0,
+          "passes": 1,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 30,
+          "sub": true,
+          "added": false
+        },
+        {
+          "num": 7,
+          "name": "Augustine Vaca",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 1,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 28,
+          "sub": true,
+          "added": false
+        }
+      ],
+      "pk": {
+        "home": 0,
+        "away": 0,
+        "kickers": []
+      },
+      "notes": "",
+      "log": [
+        {
+          "t": "00:00",
+          "m": "▶ 1st Half started"
+        },
+        {
+          "t": "00:08",
+          "m": "🔵 Pass #23 Adrian De Leon (00:08)"
+        },
+        {
+          "t": "00:09",
+          "m": "🔵 Pass #29 Asaiah Galindo (00:09)"
+        },
+        {
+          "t": "00:09",
+          "m": "🔵 Pass #1 Zion Brown (00:09)"
+        },
+        {
+          "t": "00:10",
+          "m": "🔵 Pass #12 Judah Oliver (00:10)"
+        },
+        {
+          "t": "00:11",
+          "m": "🔵 Pass #11 Bradley Paguada (00:11)"
+        },
+        {
+          "t": "00:11",
+          "m": "🔵 Pass #2 Mateo Rivera (00:11)"
+        },
+        {
+          "t": "00:12",
+          "m": "🔵 Pass #3 Bryce Johnson (00:12)"
+        },
+        {
+          "t": "00:12",
+          "m": "🔵 Pass #7 Augustine Vaca (00:12)"
+        },
+        {
+          "t": "00:13",
+          "m": "🔵 Pass #10 Flynt Philburn (00:13)"
+        },
+        {
+          "t": "00:16",
+          "m": "⚽ Goal! #23 Adrian De Leon (00:16)"
+        },
+        {
+          "t": "00:18",
+          "m": "⚽ Goal! #29 Asaiah Galindo (00:18)"
+        },
+        {
+          "t": "00:21",
+          "m": "⚽ Goal! #1 Zion Brown (00:21)"
+        },
+        {
+          "t": "00:23",
+          "m": "⚽ Goal! #10 Flynt Philburn (00:23)"
+        },
+        {
+          "t": "00:28",
+          "m": "#13 Rowan Peterson ready — tap a field player"
+        },
+        {
+          "t": "00:28",
+          "m": "Sub: #13 Rowan Peterson on for #7 Augustine Vaca (00:28)"
+        },
+        {
+          "t": "00:29",
+          "m": "#30 Nathan Gonzalez ready — tap a field player"
+        },
+        {
+          "t": "00:30",
+          "m": "Sub: #30 Nathan Gonzalez on for #10 Flynt Philburn (00:30)"
+        },
+        {
+          "t": "00:31",
+          "m": "#8 Juan Arana ready — tap a field player"
+        },
+        {
+          "t": "00:32",
+          "m": "Sub: #8 Juan Arana on for #3 Bryce Johnson (00:32)"
+        },
+        {
+          "t": "00:34",
+          "m": "#5 Gabe Nakada-Gantt ready — tap a field player"
+        },
+        {
+          "t": "00:35",
+          "m": "Sub: #5 Gabe Nakada-Gantt on for #2 Mateo Rivera (00:35)"
+        },
+        {
+          "t": "00:37",
+          "m": "#4 Paolo Cox ready — tap a field player"
+        },
+        {
+          "t": "00:37",
+          "m": "Sub: #4 Paolo Cox on for #12 Judah Oliver (00:37)"
+        },
+        {
+          "t": "00:00",
+          "m": "▶ 2nd Half — clock reset to 00:00"
+        },
+        {
+          "t": "00:07",
+          "m": "🚩 Corner #1 Zion Brown (00:07)"
+        },
+        {
+          "t": "00:11",
+          "m": "🚩 Corner #29 Asaiah Galindo (00:11)"
+        },
+        {
+          "t": "00:13",
+          "m": "🚩 Corner #23 Adrian De Leon (00:13)"
+        },
+        {
+          "t": "00:15",
+          "m": "🚩 Corner #11 Bradley Paguada (00:15)"
+        },
+        {
+          "t": "00:17",
+          "m": "🚩 Corner #4 Paolo Cox (00:17)"
+        },
+        {
+          "t": "00:19",
+          "m": "🚩 Corner #13 Rowan Peterson (00:19)"
+        },
+        {
+          "t": "00:21",
+          "m": "🚩 Corner #8 Juan Arana (00:21)"
+        },
+        {
+          "t": "00:24",
+          "m": "🚩 Corner #30 Nathan Gonzalez (00:24)"
+        },
+        {
+          "t": "00:26",
+          "m": "🚩 Corner #5 Gabe Nakada-Gantt (00:26)"
+        },
+        {
+          "t": "01:00",
+          "m": "🏁 End of Regulation — 01:00"
+        }
+      ],
+      "matchInfo": {
+        "opponent": "Alvaro",
+        "date": "",
+        "time": "",
+        "place": "",
+        "matchType": "friendly"
+      }
+    },
+    {
+      "id": 1783389469274,
+      "date": "Jul 6, 2026 – 6:57 PM",
+      "opp": "Opponent",
+      "home": 0,
+      "away": 0,
+      "halfLen": 45,
+      "compType": "",
+      "players": [
+        {
+          "num": 10,
+          "name": "Flynt Philburn",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 0,
+          "added": false
+        },
+        {
+          "num": 2,
+          "name": "Mateo Rivera",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 0,
+          "added": false
+        },
+        {
+          "num": 3,
+          "name": "Bryce Johnson",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 0,
+          "added": false
+        },
+        {
+          "num": 7,
+          "name": "Augustine Vaca",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 0,
+          "added": false
+        },
+        {
+          "num": 8,
+          "name": "Juan Arana",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 0,
+          "added": false
+        },
+        {
+          "num": 11,
+          "name": "Bradley Paguada",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 0,
+          "added": false
+        },
+        {
+          "num": 12,
+          "name": "Judah Oliver",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 0,
+          "added": false
+        },
+        {
+          "num": 23,
+          "name": "Adrian De Leon",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 0,
+          "added": false
+        },
+        {
+          "num": 29,
+          "name": "Asaiah Galindo",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 0,
+          "added": false
+        }
+      ],
+      "pk": {
+        "home": 0,
+        "away": 0,
+        "kickers": []
+      },
+      "notes": "",
+      "log": [],
+      "matchInfo": {
+        "opponent": "",
+        "date": "",
+        "time": "",
+        "place": "",
+        "matchType": ""
+      }
+    },
+    {
+      "id": 1783372569539,
+      "date": "Jul 6, 2026 – 2:14 PM",
+      "opp": "RyanFC",
+      "home": 2,
+      "away": 0,
+      "halfLen": 1,
+      "compType": "friendly",
+      "players": [
+        {
+          "num": 10,
+          "name": "Flynt Philburn",
+          "goals": 1,
+          "assists": 0,
+          "corners": 0,
+          "shots": 1,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 2,
+          "name": "Mateo Rivera",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 3,
+          "name": "Bryce Johnson",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 7,
+          "name": "Augustine Vaca",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 8,
+          "name": "Juan Arana",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 11,
+          "name": "Bradley Paguada",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 12,
+          "name": "Judah Oliver",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 1,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 23,
+          "name": "Adrian De Leon",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 1,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 29,
+          "name": "Asaiah Galindo",
+          "goals": 1,
+          "assists": 0,
+          "corners": 0,
+          "shots": 1,
+          "saves": 0,
+          "passes": 1,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        }
+      ],
+      "pk": {
+        "home": 0,
+        "away": 0,
+        "kickers": []
+      },
+      "notes": "",
+      "log": [
+        {
+          "t": "00:00",
+          "m": "▶ 1st Half started"
+        },
+        {
+          "t": "00:04",
+          "m": "🔵 Pass #12 Judah Oliver (00:04)"
+        },
+        {
+          "t": "00:05",
+          "m": "🔵 Pass #23 Adrian De Leon (00:05)"
+        },
+        {
+          "t": "00:05",
+          "m": "🔵 Pass #29 Asaiah Galindo (00:05)"
+        },
+        {
+          "t": "00:08",
+          "m": "⚽ Goal! #12 Judah Oliver (00:08)"
+        },
+        {
+          "t": "00:10",
+          "m": "⚽ Goal! #23 Adrian De Leon (00:10)"
+        },
+        {
+          "t": "00:13",
+          "m": "⚽ Goal! #29 Asaiah Galindo (00:13)"
+        },
+        {
+          "t": "01:00",
+          "m": "⏱ Halftime — 01:00"
+        },
+        {
+          "t": "00:00",
+          "m": "▶ 2nd Half — clock reset to 00:00"
+        },
+        {
+          "t": "00:23",
+          "m": "↩ Undid: ⚽ Goal! #12 Judah Oliver (00:23)"
+        },
+        {
+          "t": "00:25",
+          "m": "↩ Undid: ⚽ Goal! #23 Adrian De Leon (00:25)"
+        },
+        {
+          "t": "00:59",
+          "m": "⚽ Goal! #10 Flynt Philburn (00:59)"
+        },
+        {
+          "t": "01:00",
+          "m": "🏁 End of Regulation — 01:00"
+        }
+      ],
+      "matchInfo": {
+        "opponent": "RyanFC",
+        "date": "2026-07-06",
+        "time": "14:13",
+        "place": "Cvca",
+        "matchType": "friendly"
+      }
+    },
+    {
+      "id": 1783351361148,
+      "date": "Jul 6, 2026 – 8:22 AM",
+      "opp": "Oliver tree",
+      "home": 1,
+      "away": 0,
+      "halfLen": 1,
+      "compType": "",
+      "players": [
+        {
+          "num": 10,
+          "name": "Flynt Philburn",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 2,
+          "name": "Mateo Rivera",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 3,
+          "name": "Bryce Johnson",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 7,
+          "name": "Augustine Vaca",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 8,
+          "name": "Juan Arana",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 11,
+          "name": "Bradley Paguada",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 12,
+          "name": "Judah Oliver",
+          "goals": 1,
+          "assists": 0,
+          "corners": 0,
+          "shots": 1,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 23,
+          "name": "Adrian De Leon",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 29,
+          "name": "Asaiah Galindo",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        }
+      ],
+      "pk": {
+        "home": 0,
+        "away": 0,
+        "kickers": []
+      },
+      "notes": "",
+      "log": [
+        {
+          "t": "00:00",
+          "m": "▶ 1st Half started"
+        },
+        {
+          "t": "00:47",
+          "m": "⚽ Goal! #12 Judah Oliver (00:47)"
+        },
+        {
+          "t": "00:49",
+          "m": "⚽ Goal! #23 Adrian De Leon (00:49)"
+        },
+        {
+          "t": "00:51",
+          "m": "⚽ Goal! #29 Asaiah Galindo (00:51)"
+        },
+        {
+          "t": "00:55",
+          "m": "↩ Undid: ⚽ Goal! #29 Asaiah Galindo (00:55)"
+        },
+        {
+          "t": "00:57",
+          "m": "↩ Undid: ⚽ Goal! #23 Adrian De Leon (00:57)"
+        },
+        {
+          "t": "01:00",
+          "m": "⏱ Halftime — 01:00"
+        },
+        {
+          "t": "00:00",
+          "m": "▶ 2nd Half — clock reset to 00:00"
+        },
+        {
+          "t": "01:00",
+          "m": "🏁 End of Regulation — 01:00"
+        }
+      ],
+      "matchInfo": {
+        "opponent": "Oliver tree",
+        "date": "2026-07-06",
+        "time": "08:22",
+        "place": "Cvca",
+        "matchType": ""
+      }
+    },
+    {
+      "id": 1783351077373,
+      "date": "Jul 6, 2026 – 8:19 AM",
+      "opp": "Roxy music",
+      "home": 1,
+      "away": 0,
+      "halfLen": 1,
+      "compType": "",
+      "players": [
+        {
+          "num": 10,
+          "name": "Flynt Philburn",
+          "goals": 1,
+          "assists": 0,
+          "corners": 0,
+          "shots": 1,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 2,
+          "name": "Mateo Rivera",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 3,
+          "name": "Bryce Johnson",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 7,
+          "name": "Augustine Vaca",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 8,
+          "name": "Juan Arana",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 11,
+          "name": "Bradley Paguada",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 12,
+          "name": "Judah Oliver",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 23,
+          "name": "Adrian De Leon",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 29,
+          "name": "Asaiah Galindo",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        }
+      ],
+      "pk": {
+        "home": 0,
+        "away": 0,
+        "kickers": []
+      },
+      "notes": "",
+      "log": [
+        {
+          "t": "00:00",
+          "m": "▶ 1st Half started"
+        },
+        {
+          "t": "00:30",
+          "m": "⚽ Goal! #10 Flynt Philburn (00:30)"
+        },
+        {
+          "t": "00:34",
+          "m": "⚽ Goal! #3 Bryce Johnson (00:34)"
+        },
+        {
+          "t": "01:00",
+          "m": "⏱ Halftime — 01:00"
+        },
+        {
+          "t": "00:00",
+          "m": "▶ 2nd Half — clock reset to 00:00"
+        },
+        {
+          "t": "00:21",
+          "m": "↩ Undid: ⚽ Goal! #3 Bryce Johnson (00:21)"
+        },
+        {
+          "t": "01:00",
+          "m": "🏁 End of Regulation — 01:00"
+        }
+      ],
+      "matchInfo": {
+        "opponent": "Roxy music",
+        "date": "2026-07-06",
+        "time": "08:14",
+        "place": "Cvca",
+        "matchType": ""
+      }
+    },
+    {
+      "id": 1783347356739,
+      "date": "Jul 6, 2026 – 7:12 AM",
+      "opp": "Steelydan",
+      "home": 4,
+      "away": 1,
+      "halfLen": 1,
+      "compType": "friendly",
+      "players": [
+        {
+          "num": 30,
+          "name": "Nathan Gonzalez",
+          "goals": 1,
+          "assists": 0,
+          "corners": 0,
+          "shots": 1,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 46,
+          "added": false
+        },
+        {
+          "num": 2,
+          "name": "Mateo Rivera",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 3,
+          "name": "Bryce Johnson",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 7,
+          "name": "Augustine Vaca",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 8,
+          "name": "Juan Arana",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 11,
+          "name": "Bradley Paguada",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 12,
+          "name": "Judah Oliver",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 23,
+          "name": "Adrian De Leon",
+          "goals": 1,
+          "assists": 0,
+          "corners": 0,
+          "shots": 1,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 29,
+          "name": "Asaiah Galindo",
+          "goals": 1,
+          "assists": 0,
+          "corners": 0,
+          "shots": 1,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 10,
+          "name": "Flynt Philburn",
+          "goals": 1,
+          "assists": 0,
+          "corners": 0,
+          "shots": 1,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 74,
+          "sub": true,
+          "added": false
+        }
+      ],
+      "pk": {
+        "home": 0,
+        "away": 0,
+        "kickers": []
+      },
+      "notes": "",
+      "log": [
+        {
+          "t": "00:00",
+          "m": "▶ 1st Half started"
+        },
+        {
+          "t": "00:06",
+          "m": "⚽ Goal! #29 Asaiah Galindo (00:06)"
+        },
+        {
+          "t": "00:08",
+          "m": "⚽ Goal! #23 Adrian De Leon (00:08)"
+        },
+        {
+          "t": "00:16",
+          "m": "⚽ Goal! #10 Flynt Philburn (00:16)"
+        },
+        {
+          "t": "01:00",
+          "m": "⏱ Halftime — 01:00"
+        },
+        {
+          "t": "00:00",
+          "m": "▶ 2nd Half — clock reset to 00:00"
+        },
+        {
+          "t": "00:13",
+          "m": "#30 Nathan Gonzalez ready — tap a field player"
+        },
+        {
+          "t": "00:14",
+          "m": "Sub: #30 Nathan Gonzalez on for #10 Flynt Philburn (00:14)"
+        },
+        {
+          "t": "00:18",
+          "m": "⚽ Goal! #30 Nathan Gonzalez (00:18)"
+        },
+        {
+          "t": "01:00",
+          "m": "🏁 End of Regulation — 01:00"
+        }
+      ],
+      "matchInfo": {
+        "opponent": "Steelydan",
+        "date": "2026-07-06",
+        "time": "07:12",
+        "place": "Cvca",
+        "matchType": "friendly"
+      }
+    },
+    {
+      "id": 1783346926442,
+      "date": "Jul 6, 2026 – 7:08 AM",
+      "opp": "Us",
+      "home": 0,
+      "away": 0,
+      "halfLen": 1,
+      "compType": "friendly",
+      "players": [
+        {
+          "num": 10,
+          "name": "Flynt Philburn",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 60,
+          "added": false
+        },
+        {
+          "num": 2,
+          "name": "Mateo Rivera",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 60,
+          "added": false
+        },
+        {
+          "num": 3,
+          "name": "Bryce Johnson",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 60,
+          "added": false
+        },
+        {
+          "num": 7,
+          "name": "Augustine Vaca",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 60,
+          "added": false
+        },
+        {
+          "num": 8,
+          "name": "Juan Arana",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 60,
+          "added": false
+        },
+        {
+          "num": 11,
+          "name": "Bradley Paguada",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 60,
+          "added": false
+        },
+        {
+          "num": 12,
+          "name": "Judah Oliver",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 60,
+          "added": false
+        },
+        {
+          "num": 23,
+          "name": "Adrian De Leon",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 60,
+          "added": false
+        },
+        {
+          "num": 29,
+          "name": "Asaiah Galindo",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 60,
+          "added": false
+        }
+      ],
+      "pk": {
+        "home": 0,
+        "away": 0,
+        "kickers": []
+      },
+      "notes": "",
+      "log": [
+        {
+          "t": "00:00",
+          "m": "▶ 1st Half started"
+        },
+        {
+          "t": "00:07",
+          "m": "🔵 Pass #10 Flynt Philburn (00:07)"
+        },
+        {
+          "t": "00:10",
+          "m": "⚽ Goal! #10 Flynt Philburn (00:10)"
+        },
+        {
+          "t": "00:14",
+          "m": "↩ Undid: ⚽ Goal! #10 Flynt Philburn (00:14)"
+        },
+        {
+          "t": "00:19",
+          "m": "↩ Undid: 🔵 Pass #10 Flynt Philburn (00:19)"
+        },
+        {
+          "t": "01:00",
+          "m": "🏁 End of Regulation — 01:00"
+        },
+        {
+          "t": "01:00",
+          "m": "🏁 End of Regulation — 01:00"
+        }
+      ],
+      "matchInfo": {
+        "opponent": "Us",
+        "date": "2026-07-06",
+        "time": "07:06",
+        "place": "Cvca",
+        "matchType": "friendly"
+      }
+    },
+    {
+      "id": 1783346530803,
+      "date": "Jul 6, 2026 – 7:03 AM",
+      "opp": "Steely dan",
+      "home": 0,
+      "away": 0,
+      "halfLen": 1,
+      "compType": "",
+      "players": [
+        {
+          "num": 10,
+          "name": "Flynt Philburn",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 2,
+          "name": "Mateo Rivera",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 3,
+          "name": "Bryce Johnson",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 7,
+          "name": "Augustine Vaca",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 8,
+          "name": "Juan Arana",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 11,
+          "name": "Bradley Paguada",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 30,
+          "name": "Nathan Gonzalez",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 53,
+          "added": false
+        },
+        {
+          "num": 23,
+          "name": "Adrian De Leon",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 29,
+          "name": "Asaiah Galindo",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 120,
+          "added": false
+        },
+        {
+          "num": 12,
+          "name": "Judah Oliver",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 67,
+          "sub": true,
+          "added": false
+        }
+      ],
+      "pk": {
+        "home": 0,
+        "away": 0,
+        "kickers": []
+      },
+      "notes": "",
+      "log": [
+        {
+          "t": "00:00",
+          "m": "▶ 1st Half started"
+        },
+        {
+          "t": "00:00",
+          "m": "▶ 1st Half started"
+        },
+        {
+          "t": "00:13",
+          "m": "🔵 Pass #12 Judah Oliver (00:13)"
+        },
+        {
+          "t": "00:16",
+          "m": "⚽ Goal! #12 Judah Oliver (00:16)"
+        },
+        {
+          "t": "00:28",
+          "m": "🥅 Save #12 Judah Oliver (00:28)"
+        },
+        {
+          "t": "00:35",
+          "m": "👟 Assist #12 Judah Oliver (00:35)"
+        },
+        {
+          "t": "00:42",
+          "m": "↩ Undid: 👟 Assist #12 Judah Oliver (00:35)"
+        },
+        {
+          "t": "00:43",
+          "m": "↩ Undid: 🥅 Save #12 Judah Oliver (00:28)"
+        },
+        {
+          "t": "00:45",
+          "m": "↩ Undid: ⚽ Goal! #12 Judah Oliver (00:16)"
+        },
+        {
+          "t": "00:52",
+          "m": "↩ Undid: 🔵 Pass #12 Judah Oliver (00:52)"
+        },
+        {
+          "t": "01:00",
+          "m": "⏱ Halftime — 01:00"
+        },
+        {
+          "t": "00:00",
+          "m": "▶ 2nd Half — clock reset to 00:00"
+        },
+        {
+          "t": "00:04",
+          "m": "#30 Nathan Gonzalez ready — tap a field player"
+        },
+        {
+          "t": "00:07",
+          "m": "Sub: #30 Nathan Gonzalez on for #12 Judah Oliver (00:07)"
+        },
+        {
+          "t": "00:11",
+          "m": "⚽ Goal! #30 Nathan Gonzalez (00:11)"
+        },
+        {
+          "t": "00:16",
+          "m": "🥅 Save #30 Nathan Gonzalez (00:16)"
+        },
+        {
+          "t": "00:19",
+          "m": "👟 Assist #30 Nathan Gonzalez (00:19)"
+        },
+        {
+          "t": "00:23",
+          "m": "🔵 Pass #30 Nathan Gonzalez (00:23)"
+        },
+        {
+          "t": "00:30",
+          "m": "↩ Undid: 👟 Assist #30 Nathan Gonzalez (00:19)"
+        },
+        {
+          "t": "00:31",
+          "m": "↩ Undid: 🥅 Save #30 Nathan Gonzalez (00:16)"
+        },
+        {
+          "t": "00:33",
+          "m": "↩ Undid: ⚽ Goal! #30 Nathan Gonzalez (00:11)"
+        },
+        {
+          "t": "00:39",
+          "m": "↩ Undid: 🔵 Pass #30 Nathan Gonzalez (00:39)"
+        },
+        {
+          "t": "01:00",
+          "m": "🏁 End of Regulation — 01:00"
+        }
+      ],
+      "matchInfo": {
+        "opponent": "Steely dan",
+        "date": "2026-07-06",
+        "time": "06:59",
+        "place": "Here",
+        "matchType": ""
+      }
+    },
+    {
+      "id": 1783302179089,
+      "date": "Jul 5, 2026 – 6:42 PM",
+      "opp": "Opponent",
+      "home": 1,
+      "away": 0,
+      "halfLen": 5,
+      "compType": "",
+      "players": [
+        {
+          "num": 10,
+          "name": "Flynt Philburn",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 300,
+          "added": false
+        },
+        {
+          "num": 2,
+          "name": "Mateo Rivera",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 300,
+          "added": false
+        },
+        {
+          "num": 3,
+          "name": "Bryce Johnson",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 300,
+          "added": false
+        },
+        {
+          "num": 7,
+          "name": "Augustine Vaca",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 300,
+          "added": false
+        },
+        {
+          "num": 8,
+          "name": "Juan Arana",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 300,
+          "added": false
+        },
+        {
+          "num": 11,
+          "name": "Bradley Paguada",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 300,
+          "added": false
+        },
+        {
+          "num": 12,
+          "name": "Judah Oliver",
+          "goals": 1,
+          "assists": 0,
+          "corners": 0,
+          "shots": 1,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 300,
+          "added": false
+        },
+        {
+          "num": 23,
+          "name": "Adrian De Leon",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 300,
+          "added": false
+        },
+        {
+          "num": 29,
+          "name": "Asaiah Galindo",
+          "goals": 0,
+          "assists": 0,
+          "corners": 0,
+          "shots": 0,
+          "saves": 0,
+          "passes": 0,
+          "yc": 0,
+          "rc": 0,
+          "inj": 0,
+          "secs": 300,
+          "added": false
+        }
+      ],
+      "pk": {
+        "home": 0,
+        "away": 0,
+        "kickers": [
+          {
+            "id": 8,
+            "num": 29,
+            "name": "Asaiah Galindo",
+            "status": "none"
+          },
+          {
+            "id": 7,
+            "num": 23,
+            "name": "Adrian De Leon",
+            "status": "none"
+          },
+          {
+            "id": 6,
+            "num": 12,
+            "name": "Judah Oliver",
+            "status": "none"
+          }
+        ]
+      },
+      "notes": "",
+      "log": [
+        {
+          "t": "01:00",
+          "m": "⚽ Goal! #23 Adrian De Leon (01:00)"
+        },
+        {
+          "t": "01:09",
+          "m": "↩ Undid: ⚽ Goal! #23 Adrian De Leon (01:09)"
+        },
+        {
+          "t": "01:42",
+          "m": "🔵 Pass #12 Judah Oliver (01:42)"
+        },
+        {
+          "t": "01:43",
+          "m": "🔵 Pass #12 Judah Oliver (01:43)"
+        },
+        {
+          "t": "01:47",
+          "m": "⚽ Goal! #12 Judah Oliver (01:47)"
+        },
+        {
+          "t": "01:58",
+          "m": "⚽ Goal! #12 Judah Oliver (01:58)"
+        },
+        {
+          "t": "02:03",
+          "m": "↩ Undid: ⚽ Goal! #12 Judah Oliver (02:03)"
+        },
+        {
+          "t": "02:16",
+          "m": "↩ Undid: 🎯 Shot #12 Judah Oliver (02:16)"
+        },
+        {
+          "t": "03:46",
+          "m": "🔵 Pass #12 Judah Oliver (03:46)"
+        },
+        {
+          "t": "04:07",
+          "m": "↩ Undid: ⚽ Goal! #12 Judah Oliver (04:07)"
+        },
+        {
+          "t": "04:15",
+          "m": "↩ Undid: 🔵 Pass #12 Judah Oliver (04:15)"
+        },
+        {
+          "t": "04:18",
+          "m": "↩ Undid: 🔵 Pass #12 Judah Oliver (04:18)"
+        },
+        {
+          "t": "04:21",
+          "m": "↩ Undid: 🔵 Pass #12 Judah Oliver (04:21)"
+        },
+        {
+          "t": "04:40",
+          "m": "⚽ Goal! #12 Judah Oliver (04:40)"
+        },
+        {
+          "t": "00:00",
+          "m": "▶ 2nd Half — clock reset to 00:00"
+        },
+        {
+          "t": "00:00",
+          "m": "🏁 End of Regulation — 00:00"
+        },
+        {
+          "t": "00:00",
+          "m": "⚽ #29 Asaiah Galindo added to PK kickers"
+        },
+        {
+          "t": "00:00",
+          "m": "⚽ #23 Adrian De Leon added to PK kickers"
+        },
+        {
+          "t": "00:00",
+          "m": "⚽ #12 Judah Oliver added to PK kickers"
+        },
+        {
+          "t": "00:00",
+          "m": "🏁 End of Regulation — 00:00"
+        }
+      ],
+      "matchInfo": {
+        "opponent": "",
+        "date": "",
+        "time": "",
+        "place": "",
+        "matchType": ""
+      }
+    }
+  ],
+  "asl_friendlies": [
+    {
+      "id": "asl-home",
+      "team": "Athletic South LA",
+      "isUs": true,
+      "mp": 4,
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "gf": 10,
+      "ga": 3
+    },
+    {
+      "id": "pcsc1",
+      "team": "Pacific Coast Soccer Club #1",
+      "mp": 2,
+      "w": 1,
+      "l": 1,
+      "d": 0,
+      "gf": 5,
+      "ga": 7,
+      "isUs": false
+    },
+    {
+      "id": "pcsc",
+      "team": "Pacific Coast Soccer Club",
+      "mp": 1,
+      "w": 0,
+      "l": 1,
+      "d": 0,
+      "gf": 1,
+      "ga": 16,
+      "isUs": false
+    },
+    {
+      "id": "1783636659526",
+      "team": "Fake team",
+      "isUs": false,
+      "mp": 0,
+      "w": 0,
+      "l": 0,
+      "d": 0,
+      "gf": 0,
+      "ga": 0
+    }
+  ],
+  "asl_standings": [
+    {
+      "pos": 1,
+      "team": "Sporting SoCal Wolves B15",
+      "mp": 0,
+      "w": 0,
+      "l": 0,
+      "d": 0,
+      "gf": 0,
+      "ga": 0,
+      "isUs": false
+    },
+    {
+      "pos": 2,
+      "team": "HW B2015 BLACK - SOCAL",
+      "mp": 0,
+      "w": 0,
+      "l": 0,
+      "d": 0,
+      "gf": 0,
+      "ga": 0,
+      "isUs": false
+    },
+    {
+      "pos": 3,
+      "team": "Sporting FC B2015 Coach Carlos",
+      "mp": 0,
+      "w": 0,
+      "l": 0,
+      "d": 0,
+      "gf": 0,
+      "ga": 0,
+      "isUs": false
+    },
+    {
+      "pos": 4,
+      "team": "Athletic South LA ⭐",
+      "mp": 0,
+      "w": 0,
+      "l": 0,
+      "d": 0,
+      "gf": 0,
+      "ga": 0,
+      "isUs": true
+    },
+    {
+      "pos": 5,
+      "team": "One Ivy FC B2015 Grey",
+      "mp": 0,
+      "w": 0,
+      "l": 0,
+      "d": 0,
+      "gf": 0,
+      "ga": 0,
+      "isUs": false
+    },
+    {
+      "pos": 6,
+      "team": "LA Surf SFV B2015 F3",
+      "mp": 0,
+      "w": 0,
+      "l": 0,
+      "d": 0,
+      "gf": 0,
+      "ga": 0,
+      "isUs": false
+    },
+    {
+      "pos": 7,
+      "team": "PSG Academy LA B2015 Blue",
+      "mp": 0,
+      "w": 0,
+      "l": 0,
+      "d": 0,
+      "gf": 0,
+      "ga": 0,
+      "isUs": false
+    },
+    {
+      "pos": 8,
+      "team": "LA United FC B2015 SO",
+      "mp": 0,
+      "w": 0,
+      "l": 0,
+      "d": 0,
+      "gf": 0,
+      "ga": 0,
+      "isUs": false
+    },
+    {
+      "pos": 9,
+      "team": "LA Surf SO B2015 Black",
+      "mp": 0,
+      "w": 0,
+      "l": 0,
+      "d": 0,
+      "gf": 0,
+      "ga": 0,
+      "isUs": false
+    },
+    {
+      "pos": 10,
+      "team": "LA Surf LC B2015/16 - SOCAL",
+      "mp": 0,
+      "w": 0,
+      "l": 0,
+      "d": 0,
+      "gf": 0,
+      "ga": 0,
+      "isUs": false
+    },
+    {
+      "pos": 11,
+      "team": "TEAM DROP - B15 - Flight 3 North",
+      "mp": 0,
+      "w": 0,
+      "l": 0,
+      "d": 0,
+      "gf": 0,
+      "ga": 0,
+      "isUs": false
+    }
+  ],
+  "asl_matches": [],
+  "asl_frmatches": null,
+  "asl_tournaments": [],
+  "asl_rosters_store": null,
+  "asl_lineups_store": null,
+  "asl_season_index": [
+    {
+      "key": "asl_season_1783266341001",
+      "label": "2025-26 Season",
+      "archivedAt": 1783266341001,
+      "split": false
+    }
+  ]
+}
