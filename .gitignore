@@ -1,0 +1,12 @@
+# Node / wrangler
+node_modules/
+.wrangler/
+
+# Stray JSON — soccer app backups and any auto-exported files land here by accident
+*.json
+# Exception: wrangler config if it ever gains a package.json
+!package.json
+
+# OS noise
+.DS_Store
+Thumbs.db

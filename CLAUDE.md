@@ -203,6 +203,11 @@ the game is now served as a static asset. Remaining guidance:
   `deploy_scc.ps1` when happy. Current wave-scaling knobs (v0.8.1):
   `WAVE_BUDGET_BASE`, `WAVE_BUDGET_GROWTH`, `WAVE_RATE_SCALE`,
   `WAVE_RATE_FLOOR`, `WAVE_CAP_EVERY`.
+- **Deploy script adds explicit paths only — never `git add -A`.** Stray files
+  from other projects (soccer app backups, etc.) land in this directory via
+  OneDrive sync. `git add -A` swept two soccer-app JSON files into the v0.8.3
+  commit before this was caught. `deploy_scc.ps1` now adds only known project
+  files by name. `.gitignore` also excludes `*.json` as a backstop.
 
 ---
 

@@ -18,10 +18,10 @@ $root = $PSScriptRoot
 Write-Host "Syncing public/index.html..." -ForegroundColor Cyan
 Copy-Item "$root\sandcastle_iso2.html" "$root\public\index.html" -Force
 
-# 2. Git commit + push
+# 2. Git commit + push (explicit paths only — never git add -A)
 Write-Host "Pushing to GitHub..." -ForegroundColor Cyan
 Set-Location $root
-git add -A
+git add sandcastle_iso2.html public/index.html sand_castle_worker.js wrangler.toml CLAUDE.md deploy_scc.ps1 .gitignore
 git commit -m "${version}: ${desc}"
 git push
 
