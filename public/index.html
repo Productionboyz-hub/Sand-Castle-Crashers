@@ -86,6 +86,48 @@ canvas { display:block; }
   margin-top: 2px;
 }
 .tool-btn.selected .tool-label { color: #c8eaff; }
+
+/* ── TOOLBOX DIVIDER ──────────────────────────────────────────────── */
+.toolbox-divider {
+  border: none;
+  border-top: 1px solid rgba(100,160,200,0.2);
+  margin: 5px 2px;
+}
+.toolbox-section-label {
+  color: #a8c8a0;
+  font: 8px/1 monospace;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 5px;
+  opacity: 0.7;
+}
+/* Counter buttons — same shape as tool-btn but green accent */
+.counter-btn {
+  width: 64px;
+  height: 52px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  border: 1px solid rgba(100,200,120,0.25);
+  background: rgba(255,255,255,0.03);
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 3px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.counter-btn:hover  { border-color: rgba(140,240,160,0.5); background: rgba(255,255,255,0.07); }
+.counter-btn.selected {
+  border-color: #88ddaa;
+  background: rgba(80,200,120,0.15);
+  box-shadow: 0 0 8px rgba(80,200,120,0.25);
+}
+.counter-btn canvas { position:absolute; top:0; left:0; width:64px; height:38px; border-radius:4px 4px 0 0; }
+.counter-btn .tool-label { color: #a8e0b8; }
+.counter-btn.selected .tool-label { color: #ccffdd; }
 </style>
 </head>
 <body>
@@ -191,7 +233,7 @@ function iso(col, row, z) {
 // Only activates when no piece is selected (selectedPiece === null)
 // so it doesn't conflict with placement drag.
 canvas.addEventListener('mousedown', e => {
-  if (selectedPiece) return; // toolbox drag takes priority
+  if (selectedPiece || selectedCounter) return; // toolbox drag takes priority
   orbitDragging = true;
   orbitLastX = e.clientX;
 });
@@ -210,7 +252,7 @@ window.addEventListener('mouseup', () => { orbitDragging = false; });
 let pinchLastDist = 0;
 
 canvas.addEventListener('touchstart', e => {
-  if (selectedPiece) return;
+  if (selectedPiece || selectedCounter) return;
   if (e.touches.length === 1) {
     orbitDragging = true;
     orbitLastX = e.touches[0].clientX;
@@ -883,10 +925,159 @@ PIECES.forEach(piece => {
 window.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     selectedPiece = null;
+    selectedCounter = null;
     isDragging = false;
-    document.querySelectorAll('.tool-btn.selected').forEach(b=>b.classList.remove('selected'));
+    document.querySelectorAll('.tool-btn.selected,.counter-btn.selected').forEach(b=>b.classList.remove('selected'));
   }
 });
+
+// ── COUNTERMEASURES ───────────────────────────────────────────────
+let selectedCounter = null;      // 'lightning' | null
+let lightningStrikes = [];       // [{x,y,timer,maxTimer}] — active bolt animations
+
+// Definitions for counter tools shown in toolbox
+const COUNTERS = [
+  {
+    id: 'lightning',
+    label: 'Lightning',
+    // Draw a lightning bolt icon into the preview canvas
+    drawIcon(ctx, cx, cy) {
+      ctx.save();
+      ctx.strokeStyle = '#ffee44';
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = '#88aaff';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.moveTo(cx + 2, cy - 14);
+      ctx.lineTo(cx - 4, cy - 2);
+      ctx.lineTo(cx + 2, cy - 2);
+      ctx.lineTo(cx - 4, cy + 12);
+      ctx.stroke();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cx + 2, cy - 14);
+      ctx.lineTo(cx - 4, cy - 2);
+      ctx.lineTo(cx + 2, cy - 2);
+      ctx.lineTo(cx - 4, cy + 12);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+];
+
+// Build the counter section in the toolbox
+const divider = document.createElement('hr');
+divider.className = 'toolbox-divider';
+toolboxEl.appendChild(divider);
+
+const counterLabel = document.createElement('div');
+counterLabel.className = 'toolbox-section-label';
+counterLabel.textContent = 'Counter';
+toolboxEl.appendChild(counterLabel);
+
+COUNTERS.forEach(counter => {
+  const btn = document.createElement('div');
+  btn.className = 'counter-btn';
+  btn.dataset.id = counter.id;
+
+  const pc = document.createElement('canvas');
+  pc.width = 64; pc.height = 38;
+  const pctx = pc.getContext('2d');
+  pctx.clearRect(0, 0, 64, 38);
+  counter.drawIcon(pctx, 32, 19);
+
+  const lbl = document.createElement('div');
+  lbl.className = 'tool-label';
+  lbl.textContent = counter.label;
+
+  btn.appendChild(pc);
+  btn.appendChild(lbl);
+  toolboxEl.appendChild(btn);
+
+  btn.addEventListener('click', () => {
+    const already = selectedCounter === counter.id;
+    selectedCounter = null;
+    selectedPiece = null;
+    document.querySelectorAll('.tool-btn.selected,.counter-btn.selected').forEach(b=>b.classList.remove('selected'));
+    if (!already) { selectedCounter = counter.id; btn.classList.add('selected'); }
+  });
+  btn.addEventListener('touchstart', e => {
+    e.preventDefault();
+    selectedCounter = counter.id;
+    selectedPiece = null;
+    document.querySelectorAll('.tool-btn.selected,.counter-btn.selected').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }, { passive: false });
+  btn.addEventListener('mousedown', e => {
+    selectedCounter = counter.id;
+    selectedPiece = null;
+    document.querySelectorAll('.tool-btn.selected,.counter-btn.selected').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+  });
+});
+
+// ── LIGHTNING STRIKE ─────────────────────────────────────────────
+function activateLightning(sx, sy) {
+  // Find the closest active bird to the tap point
+  let best = null, bestDist = 120; // generous tap radius for birds (they move)
+  for (const e of enemies) {
+    if (e.type !== 'bird' || e.state !== 'active') continue;
+    const sp = iso(e.col, e.row, e.altitude || 0);
+    const d  = Math.sqrt((sp.x - sx) ** 2 + (sp.y - sy) ** 2);
+    if (d < bestDist) { bestDist = d; best = e; }
+  }
+  if (!best) return;
+  const sp = iso(best.col, best.row, best.altitude || 0);
+  lightningStrikes.push({ x: sp.x, y: sp.y, timer: 22, maxTimer: 22 });
+  best.hp = 0;
+  best.state = 'scared';
+  best.scaredTimer = 0;
+}
+
+function drawLightningStrikes() {
+  for (let i = lightningStrikes.length - 1; i >= 0; i--) {
+    const s = lightningStrikes[i];
+    const alpha = s.timer / s.maxTimer;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    const x = s.x, y = s.y;
+    // Outer glow bolt
+    ctx.strokeStyle = '#88aaff';
+    ctx.lineWidth = 5;
+    ctx.shadowColor = '#aaccff';
+    ctx.shadowBlur = 16;
+    ctx.beginPath();
+    ctx.moveTo(x + 3,  y - 36);
+    ctx.lineTo(x + 9,  y - 22);
+    ctx.lineTo(x,      y - 16);
+    ctx.lineTo(x + 5,  y);
+    ctx.stroke();
+    // Bright yellow core
+    ctx.strokeStyle = '#ffee44';
+    ctx.lineWidth = 2.5;
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.moveTo(x + 3,  y - 36);
+    ctx.lineTo(x + 9,  y - 22);
+    ctx.lineTo(x,      y - 16);
+    ctx.lineTo(x + 5,  y);
+    ctx.stroke();
+    // White hot center
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.moveTo(x + 3,  y - 36);
+    ctx.lineTo(x + 9,  y - 22);
+    ctx.lineTo(x,      y - 16);
+    ctx.lineTo(x + 5,  y);
+    ctx.stroke();
+    ctx.restore();
+    s.timer--;
+    if (s.timer <= 0) lightningStrikes.splice(i, 1);
+  }
+}
 
 // ── DRAG STATE & GHOST ────────────────────────────────────────────
 // isDragging = true while finger/mouse is held down after picking a piece.
@@ -1848,33 +2039,33 @@ function nearestPiece(col, row, radius) {
   return best;
 }
 
-// ── TAP TO SCARE ──────────────────────────────────────────────────
-// Tapping an enemy reduces its hp. When hp hits 0 it turns scared.
+// ── TAP TO SCARE / COUNTERMEASURE DISPATCH ────────────────────────
 canvas.addEventListener('click', e => {
   if (selectedPiece) return; // placement mode takes priority
-  if (!gameOver && wavePhase === 'build') {
-    const rect = canvas.getBoundingClientRect();
-    if (hitWaveButton(e.clientX - rect.left, e.clientY - rect.top)) { startWave(); return; }
-  }
   const rect = canvas.getBoundingClientRect();
   const sx = e.clientX - rect.left;
   const sy = e.clientY - rect.top;
+  if (!gameOver && wavePhase === 'build' && hitWaveButton(sx, sy)) { startWave(); return; }
+  if (selectedCounter === 'lightning') { activateLightning(sx, sy); return; }
   tryScareEnemy(sx, sy);
 });
 canvas.addEventListener('touchend', e => {
   if (selectedPiece) return;
   const rect = canvas.getBoundingClientRect();
   const t = e.changedTouches[0];
-  if (!gameOver && wavePhase === 'build' &&
-      hitWaveButton(t.clientX - rect.left, t.clientY - rect.top)) { startWave(); return; }
-  tryScareEnemy(t.clientX - rect.left, t.clientY - rect.top);
+  const sx = t.clientX - rect.left;
+  const sy = t.clientY - rect.top;
+  if (!gameOver && wavePhase === 'build' && hitWaveButton(sx, sy)) { startWave(); return; }
+  if (selectedCounter === 'lightning') { activateLightning(sx, sy); return; }
+  tryScareEnemy(sx, sy);
 });
 
 function tryScareEnemy(sx, sy) {
-  // Find enemy whose screen position is close to tap
-  let best = null, bestDist = 32; // 32px tap radius
+  // Birds are handled by lightning countermeasure — skip them here
+  let best = null, bestDist = 32;
   for (const e of enemies) {
     if (e.state !== 'active') continue;
+    if (e.type === 'bird') continue; // birds: use lightning counter
     const sp = iso(e.col, e.row, 0);
     const d  = Math.sqrt((sp.x-sx)**2 + (sp.y-sy)**2);
     if (d < bestDist) { bestDist = d; best = e; }
@@ -2530,9 +2721,10 @@ function render() {
     tickEnemies();      // ← move + attack enemies
   }
 
-  drawPlacedPieces();   // ← draw with health-based visuals
-  drawEnemies();        // ← draw enemies on top
-  drawCastleHUD();      // ← castle HP bar upper-left
+  drawPlacedPieces();     // ← draw with health-based visuals
+  drawEnemies();          // ← draw enemies on top
+  drawLightningStrikes(); // ← countermeasure bolt animations
+  drawCastleHUD();        // ← castle HP bar upper-left
   if (!gameOver && wavePhase === 'build') drawWaveButton();
 
   if (gameOver) {
