@@ -162,16 +162,19 @@ so a deploy can be confirmed via browser dev tools → Network → response head
   stamps `X-Worker-Ver`, returns it. No embedded HTML — never go back to embedding.
 - Deploy = update `public/index.html` to match `sandcastle_iso2.html`, bump
   `WORKER_VER` in the Worker, run `wrangler deploy`.
-- Verify deploy: browser tab title or F12 → Sources → `index.html` line 1 shows
-  the version. (Cloudflare's Assets binding caches at the edge and strips the
-  custom `X-Worker-Ver` header on cached responses; if using curl, add
-  `?v=<timestamp>` to bust the cache.)
+- Verify deploy: on-screen version badge (bottom-right corner of the live site)
+  shows the new version string. Fallback: browser tab title or F12 → Sources →
+  `index.html` line 1. (Cloudflare's Assets binding caches at the edge and
+  strips the custom `X-Worker-Ver` header on cached responses; if using curl,
+  add `?v=<timestamp>` to bust the cache.)
 
 ### Version numbering
 
 Old embedded prototype said v0.6.1; iso file was v0.5.x. Reconciled at
-**v0.7.0** (July 2026). Single version line from here: game header comment,
-`<title>`, and `WORKER_VER` all move together.
+**v0.7.0** (July 2026). Four spots must always match: game header comment
+(line 1), `<title>`, `WORKER_VER` in the worker file, and `GAME_VER` in the
+script (added v0.8.2 — drives the on-screen badge). Miss one and the badge
+lies.
 
 ## Build plan (current sequence)
 
