@@ -1,10 +1,10 @@
-<!-- Sand Castle Crashers v0.7.2 — wave phase system: build/defend state machine, START WAVE button, clear-out waves -->
+<!-- Sand Castle Crashers v0.8.0 — countermeasures + full-screen fit, restart resets fixed -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sand Castle Crashers v0.7.2</title>
+<title>Sand Castle Crashers v0.8.0</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:#0a0e14; overflow:hidden; width:100vw; height:100vh; }
@@ -1738,6 +1738,9 @@ canvas.addEventListener('click', e => {
   poopSplats.length   = 0;
   crabSpawnTimer = 0; touristSpawnTimer = 0;
   birdSpawnTimer = 0; bobSpawnTimer     = 0;
+  lightningStrikes.length = 0;
+  selectedCounter = null;
+  document.querySelectorAll('.counter-btn.selected').forEach(b => b.classList.remove('selected'));
 });
 canvas.addEventListener('touchend', e => {
   if (!gameOver) return;
@@ -1752,6 +1755,9 @@ canvas.addEventListener('touchend', e => {
   poopSplats.length   = 0;
   crabSpawnTimer = 0; touristSpawnTimer = 0;
   birdSpawnTimer = 0; bobSpawnTimer     = 0;
+  lightningStrikes.length = 0;
+  selectedCounter = null;
+  document.querySelectorAll('.counter-btn.selected').forEach(b => b.classList.remove('selected'));
 });
 
 // ═══════════════════════════════════════════════════════════════════

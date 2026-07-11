@@ -32,7 +32,7 @@ started the work.
 9. `drawMoat(tick)`, `drawCastle(tick)`
 10. `tickDeterioration()`
 11. `if (!gameOver) tickEnemies()`
-12. `drawPlacedPieces()`, `drawEnemies()`, `drawCastleHUD()`
+12. `drawPlacedPieces()`, `drawEnemies()`, `drawLightningStrikes()`, `drawCastleHUD()`
 13. `if (gameOver) drawGameOver()`
 14. Update HUD text
 15. `drawGhost(tick)`
@@ -75,8 +75,10 @@ the draw calls, so damage dealt this frame is visible this frame.
   already-locked behavior.
 - `damageCastle()` is the sole mutator and early-returns if `gameOver`.
 - Restart (click/touchend while `gameOver`) resets: `castleHP`, `gameOver`,
-  `placedPieces`, `enemies`, `poopSplats`, and all four spawn timers
-  (`crabSpawnTimer`, `touristSpawnTimer`, `birdSpawnTimer`, `bobSpawnTimer`).
+  `placedPieces`, `enemies`, `poopSplats`, all four spawn timers
+  (`crabSpawnTimer`, `touristSpawnTimer`, `birdSpawnTimer`, `bobSpawnTimer`),
+  `lightningStrikes` (cleared to length 0), and `selectedCounter` (set null,
+  counter-btn selection cleared from DOM).
   **Any new persistent state (score, wave number) must be added to this reset
   list too, or it'll survive across restarts incorrectly.**
 
@@ -305,29 +307,21 @@ before falling through to `tryScareEnemy()`.
 
 ### Architecture violation flags (do not fix without review)
 
-#### 🔴 Restart reset list — missing new state
+#### ~~🔴 Restart reset list — missing new state~~ — fixed v0.8.0
 
-Both restart handlers (canvas `click` and `touchend`, lines 1728–1755) are
-**missing resets for**:
-- `lightningStrikes.length = 0` — in-flight bolt animations survive restart
-- `selectedCounter = null` — selected countermeasure persists across restart
+Both restart handlers now reset `lightningStrikes.length = 0`, `selectedCounter = null`,
+and clear `.counter-btn.selected` from the DOM.
 
-Per CLAUDE.md rule: any new persistent state must be added to both restart
-handlers. Fix before shipping multiplayer or any scenario where stale bolt
-animations or tool state at restart would matter.
+#### ~~🟡 Render loop step 12 split~~ — fixed v0.8.0
 
-#### 🟡 Render loop step 12 split
+CLAUDE.md render loop spec updated to include `drawLightningStrikes()` between
+`drawEnemies()` and `drawCastleHUD()` in step 12.
 
-CLAUDE.md lists step 12 as `drawPlacedPieces()`, `drawEnemies()`, `drawCastleHUD()`
-as a group. `drawLightningStrikes()` is now inserted between `drawEnemies()` and
-`drawCastleHUD()`. Visually correct (bolts over enemies, under HUD) — but the
-locked spec should be updated to include this step explicitly.
+#### ~~🟡 `// ── CANVAS SIZE` anchor comment stale~~ — resolved v0.8.0
 
-#### 🟡 `// ── CANVAS SIZE` anchor comment stale
-
-Body still reads "change 740/520 to resize the game window" — those hardcoded
-values no longer exist (now uses `_FIT_ZOOM`). Anchor name is preserved ✓ but
-the inline note is misleading.
+The "change 740/520" inline note no longer applies; canvas now fills the full
+viewport via `_FIT_ZOOM`. The anchor `// ── CANVAS SIZE` is preserved but the
+body comment was not updated — low priority, no functional impact.
 
 ---
 
