@@ -1,10 +1,10 @@
-<!-- Sand Castle Crashers v0.8.0 — countermeasures + full-screen fit, restart resets fixed -->
+<!-- Sand Castle Crashers v0.8.1 — per-wave difficulty scaling (volume/pacing) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sand Castle Crashers v0.8.0</title>
+<title>Sand Castle Crashers v0.8.1</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:#0a0e14; overflow:hidden; width:100vw; height:100vh; }
@@ -1588,12 +1588,23 @@ let score      = 0;   // waves survived
 //            AND all enemies are gone — then score++, next wave,
 //            back to 'build'.
 let wavePhase = 'build';
-const WAVE_SPAWN_BUDGET = 8;  // ← enemies per wave (scaling comes in v0.8.x)
+// ── WAVE DIFFICULTY SCALING (v0.8.1) ──────────────────────────
+// All scaling derives from waveNumber — no new state to reset.
+const WAVE_BUDGET_BASE   = 8;     // ← enemies on wave 1
+const WAVE_BUDGET_GROWTH = 2;     // ← +N enemies per wave
+const WAVE_RATE_SCALE    = 0.92;  // ← spawn intervals ×this per wave
+const WAVE_RATE_FLOOR    = 0.35;  // ← intervals never below 35% of base
+const WAVE_CAP_EVERY     = 3;     // ← +1 to crab/tourist/bird caps every N waves
+
+function waveBudget()   { return WAVE_BUDGET_BASE + (waveNumber - 1) * WAVE_BUDGET_GROWTH; }
+function waveRateMult() { return Math.max(WAVE_RATE_FLOOR, Math.pow(WAVE_RATE_SCALE, waveNumber - 1)); }
+function waveCapBonus() { return Math.floor((waveNumber - 1) / WAVE_CAP_EVERY); }
+
 let waveSpawnsRemaining = 0;
 
 function startWave() {
   wavePhase = 'defend';
-  waveSpawnsRemaining = WAVE_SPAWN_BUDGET;
+  waveSpawnsRemaining = waveBudget();
   // Reset spawn timers; pre-seed bird so one appears immediately on wave start
   crabSpawnTimer = 0; touristSpawnTimer = 0;
   birdSpawnTimer = ENEMY_BIRD_SPAWN_RATE; bobSpawnTimer = 0;
@@ -1843,31 +1854,31 @@ function tickEnemies() {
   // Spawn birds — capped at ENEMY_BIRD_MAX
   const birdCount = enemies.filter(e => e.type === 'bird').length;
   birdSpawnTimer++;
-  if (canSpawn && birdSpawnTimer >= ENEMY_BIRD_SPAWN_RATE && birdCount < ENEMY_BIRD_MAX) {
+  if (canSpawn && birdSpawnTimer >= ENEMY_BIRD_SPAWN_RATE * waveRateMult() && birdCount < ENEMY_BIRD_MAX + waveCapBonus()) {
     spawnBird(); waveSpawnsRemaining--; birdSpawnTimer = 0;
   }
 
   // Spawn Bob — only one at a time
   const bobCount = enemies.filter(e => e.type === 'bob').length;
   bobSpawnTimer++;
-  if (canSpawn && bobSpawnTimer >= ENEMY_BOB_SPAWN_RATE && bobCount < ENEMY_BOB_MAX) {
+  if (canSpawn && bobSpawnTimer >= ENEMY_BOB_SPAWN_RATE * waveRateMult() && bobCount < ENEMY_BOB_MAX) {
     spawnBob(); waveSpawnsRemaining--; bobSpawnTimer = 0;
   }
 
   // Tick poop splats
   tickPoopSplats();
   const crabCount = enemies.filter(e => e.type === 'crab').length;
-  const crabRate = Math.round(ENEMY_CRAB_SPAWN_RATE * (1 - tideT * 0.4));
+  const crabRate = Math.round(ENEMY_CRAB_SPAWN_RATE * (1 - tideT * 0.4) * waveRateMult());
   crabSpawnTimer++;
-  if (canSpawn && crabSpawnTimer >= crabRate && crabCount < ENEMY_CRAB_MAX) {
+  if (canSpawn && crabSpawnTimer >= crabRate && crabCount < ENEMY_CRAB_MAX + waveCapBonus()) {
     spawnCrab(); waveSpawnsRemaining--; crabSpawnTimer = 0;
   }
 
   // Spawn tourists — randomly, capped at ENEMY_TOURIST_MAX
   const touristCount = enemies.filter(e => e.type === 'tourist').length;
-  const touristRate = Math.round(ENEMY_TOURIST_SPAWN_RATE * (1 - tideT * 0.2));
+  const touristRate = Math.round(ENEMY_TOURIST_SPAWN_RATE * (1 - tideT * 0.2) * waveRateMult());
   touristSpawnTimer++;
-  if (canSpawn && touristSpawnTimer >= touristRate && touristCount < ENEMY_TOURIST_MAX) {
+  if (canSpawn && touristSpawnTimer >= touristRate && touristCount < ENEMY_TOURIST_MAX + waveCapBonus()) {
     spawnTourist(); waveSpawnsRemaining--; touristSpawnTimer = 0;
   }
 

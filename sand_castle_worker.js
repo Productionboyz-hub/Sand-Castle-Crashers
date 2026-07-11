@@ -1,6 +1,6 @@
-// Sand Castle Crashers — thin Worker v0.8.0
+// Sand Castle Crashers — thin Worker v0.8.1
 // Serves static assets from ./public and stamps a deploy-version header.
-const WORKER_VER = 'v0.8.0';
+const WORKER_VER = 'v0.8.1';
 
 export default {
   async fetch(request, env) {
