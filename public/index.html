@@ -1118,14 +1118,16 @@ window.addEventListener('touchmove', e => {
 }, { passive: false });
 
 window.addEventListener('touchend', e => {
-  if (!isDragging || !selectedPiece) { isDragging = false; return; }
   isDragging = false;
+  if (!selectedPiece) return;
   const touch = e.changedTouches[0];
   const rect = canvas.getBoundingClientRect();
   const sx = touch.clientX - rect.left;
   const sy = touch.clientY - rect.top;
-  const g = screenToGrid(sx, sy);
-  placePiece(g.col, g.row);
+  // Only place if finger lifted over the canvas area (not the toolbox panels)
+  if (sx >= 0 && sy >= 0 && sx <= canvas.width && sy <= canvas.height) {
+    placePiece(screenToGrid(sx, sy).col, screenToGrid(sx, sy).row);
+  }
 });
 
 // ── PLACED PIECES ─────────────────────────────────────────────────
