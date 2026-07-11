@@ -899,13 +899,14 @@ PIECES.forEach(piece => {
     }
   });
 
-  // ── Touch: press-and-hold to start dragging from panel ───────
+  // ── Touch: tap to select; drag sets isDragging via touchmove ───
   btn.addEventListener('touchstart', e => {
     e.preventDefault(); // stop scroll
-    document.querySelectorAll('.tool-btn.selected').forEach(b=>b.classList.remove('selected'));
+    document.querySelectorAll('.tool-btn.selected,.counter-btn.selected').forEach(b=>b.classList.remove('selected'));
     selectedPiece = piece.id;
+    selectedCounter = null;
     btn.classList.add('selected');
-    isDragging = true;
+    // isDragging NOT set here — touchmove sets it so tap-to-select works cleanly
   }, { passive: false });
 
   // ── Mouse: mousedown on button starts drag ────────────────────
@@ -1106,6 +1107,7 @@ window.addEventListener('mouseup', e => {
 window.addEventListener('touchmove', e => {
   if (!selectedPiece) return;
   e.preventDefault();
+  isDragging = true; // actual drag detected — touchend will place on release
   const touch = e.touches[0];
   const rect = canvas.getBoundingClientRect();
   const sx = touch.clientX - rect.left;
@@ -1174,6 +1176,10 @@ function placePiece(col, row) {
   } else {
     placedPieces.push({ id: selectedPiece, col, row, health: 100, decayTimer: 0 });
   }
+  // Release selection after placing
+  selectedPiece = null;
+  isDragging = false;
+  document.querySelectorAll('.tool-btn.selected').forEach(b => b.classList.remove('selected'));
 }
 
 // ── DETERIORATION TICK — called once per render frame ─────────────
@@ -1566,9 +1572,9 @@ let waveSpawnsRemaining = 0;
 function startWave() {
   wavePhase = 'defend';
   waveSpawnsRemaining = WAVE_SPAWN_BUDGET;
-  // Reset spawn timers so the wave opens with a fresh cadence
+  // Reset spawn timers; pre-seed bird so one appears immediately on wave start
   crabSpawnTimer = 0; touristSpawnTimer = 0;
-  birdSpawnTimer = 0; bobSpawnTimer     = 0;
+  birdSpawnTimer = ENEMY_BIRD_SPAWN_RATE; bobSpawnTimer = 0;
 }
 
 // START WAVE button hit-box (set each frame it is drawn)
