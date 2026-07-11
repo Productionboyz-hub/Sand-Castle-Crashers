@@ -182,15 +182,22 @@ function fbm(x,y,oct){
 // ── ISO GRID ──────────────────────────────────────────────────────
 const GCOLS = 16, GROWS = 16;
 const TW_BASE = 56, TH_BASE = 28; // base tile size — scaled by camZoom
+
+// Auto-fit: scale the grid to fill ~82% of width or 78% of height, whichever binds first
+const _GRID_DIAG = GCOLS + GROWS; // diagonal tile span (32)
+const _FIT_ZOOM  = Math.min(
+  (SW * 0.82) / (_GRID_DIAG * TW_BASE / 2),
+  (SH * 0.78) / (_GRID_DIAG * TH_BASE / 2)
+);
 const OX = SW * 0.5;
-const OY = SH * 0.06;
+const OY = (SH - _GRID_DIAG * TH_BASE * _FIT_ZOOM / 2) * 0.32;
 
 // ── ZOOM ──────────────────────────────────────────────────────────
 // camZoom: live scale multiplier applied to tile size in iso()
 // ZOOM_MIN/MAX: pinch-to-zoom limits
 // ← TWEAK: ZOOM_SMOOTH controls how snappily zoom settles
-let camZoom      = 1.0;   // current zoom
-let camZoomDest  = 1.0;   // target zoom (smoothed toward)
+let camZoom      = _FIT_ZOOM;   // current zoom
+let camZoomDest  = _FIT_ZOOM;   // target zoom (smoothed toward)
 const ZOOM_MIN   = 0.45;  // ← TWEAK: most zoomed out
 const ZOOM_MAX   = 2.2;   // ← TWEAK: most zoomed in
 const ZOOM_SMOOTH = 0.14; // ← TWEAK: easing speed
