@@ -162,8 +162,10 @@ so a deploy can be confirmed via browser dev tools → Network → response head
   stamps `X-Worker-Ver`, returns it. No embedded HTML — never go back to embedding.
 - Deploy = update `public/index.html` to match `sandcastle_iso2.html`, bump
   `WORKER_VER` in the Worker, run `wrangler deploy`.
-- Verify deploy: browser F12 → Network → reload → click the document request →
-  Response Headers → `X-Worker-Ver` matches.
+- Verify deploy: browser tab title or F12 → Sources → `index.html` line 1 shows
+  the version. (Cloudflare's Assets binding caches at the edge and strips the
+  custom `X-Worker-Ver` header on cached responses; if using curl, add
+  `?v=<timestamp>` to bust the cache.)
 
 ### Version numbering
 
@@ -190,6 +192,14 @@ the game is now served as a static asset. Remaining guidance:
 - Prefer concatenation in new patches only because `${}` inside backticks is
   fragile for `str_replace` exact-matching; quote generous context when a
   patch touches a backtick line.
+
+## Key Learnings
+
+- **Constant tuning loop:** VS Code edits test locally only — the live site
+  deploys from the repo, so the loop is: tweak → test local file → run
+  `deploy_scc.ps1` when happy. Current wave-scaling knobs (v0.8.1):
+  `WAVE_BUDGET_BASE`, `WAVE_BUDGET_GROWTH`, `WAVE_RATE_SCALE`,
+  `WAVE_RATE_FLOOR`, `WAVE_CAP_EVERY`.
 
 ---
 
