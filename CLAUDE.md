@@ -188,3 +188,151 @@ the game is now served as a static asset. Remaining guidance:
 - Prefer concatenation in new patches only because `${}` inside backticks is
   fragile for `str_replace` exact-matching; quote generous context when a
   patch touches a backtick line.
+
+---
+
+## Session log — post-v0.7.2 divergence
+
+### Version state (as of this audit)
+
+- **Line 1 comment, `<title>`, `WORKER_VER`**: all still read `v0.7.2` — **stale**.
+  Actual content is at v0.7.8 per git log. None of the incremental sessions
+  updated the version line in the HTML or the Worker. Next session must bump
+  all three before deploying.
+- `sandcastle_iso2.html` == `public/index.html` byte-for-byte ✓
+- `sand_castle_worker.js` WORKER_VER still `'v0.7.2'` — X-Worker-Ver header
+  will report wrong version until bumped.
+
+---
+
+### Changes made since v0.7.2 (by area)
+
+#### CSS / Layout (lines 9–130)
+
+| What changed | Detail |
+|---|---|
+| `body` | Removed flex centering; now `overflow:hidden; width:100vw; height:100vh` |
+| `#hud` | Moved inside `#game-wrap`; now `position:absolute; bottom:6px; left:50%; transform:translateX(-50%)` overlay |
+| `#game-wrap` | Changed from `display:inline-block` to `width:100vw; height:100vh` |
+| `#toolbox, #countertoolbox` | Merged shared ruleset; added `-webkit-overflow-scrolling:touch`; `max-height:calc(100% - 16px)` |
+| `#countertoolbox` | **New element** — `left:6px`, green border `rgba(100,200,120,0.25)` |
+| `.counter-btn` + variants | **New classes** — mirror `.tool-btn` with green accent for countermeasure buttons |
+
+#### HTML (lines 128–150)
+
+- `<div id="countertoolbox">` added (left side, before `#toolbox`)
+- `<div id="hud">` moved from after `#game-wrap` to inside it
+
+#### New constants (lines 187–200)
+
+```
+const _GRID_DIAG = GCOLS + GROWS;   // 32 — diagonal tile span
+const _FIT_ZOOM  = Math.min(         // auto-fit zoom on load
+  (SW * 0.82) / (_GRID_DIAG * TW_BASE / 2),
+  (SH * 0.78) / (_GRID_DIAG * TH_BASE / 2)
+);
+```
+- `OY` now computed: `(SH - _GRID_DIAG * TH_BASE * _FIT_ZOOM / 2) * 0.32`
+  (was `SH * 0.06`)
+- `camZoom` and `camZoomDest` initialised to `_FIT_ZOOM` (was `1.0`)
+
+#### Modified orbit-drag guards (lines 252, 271)
+
+- `canvas mousedown` and `canvas touchstart` both now check
+  `if (selectedPiece || selectedCounter) return;`
+
+#### New state variables (lines 952–953)
+
+```js
+let selectedCounter  = null;  // 'lightning' | null — active countermeasure
+let lightningStrikes = [];    // [{x, y, timer, maxTimer}] — bolt animations
+```
+
+#### New section: `// ── COUNTERMEASURES ──` (lines 951–1088)
+
+- `const COUNTERS = [{ id:'lightning', label:'Lightning', drawIcon(ctx,cx,cy){…} }]`
+- `counterToolboxEl` — pointer to `#countertoolbox` DOM element
+- `COUNTERS.forEach(…)` — builds counter buttons into left panel; each button
+  has `click`, `touchstart`, `mousedown` handlers that set `selectedCounter`
+  and clear `selectedPiece` (mutually exclusive with build tools)
+- `activateLightning(sx, sy)` — finds nearest active bird within 120 px via
+  `iso(e.col, e.row, e.altitude)`, sets `hp=0 / state='scared'`, pushes
+  `{x, y, timer:22, maxTimer:22}` into `lightningStrikes`
+- `drawLightningStrikes()` — draws fading three-pass jagged bolt (glow / yellow
+  core / white centre); ages and splices expired entries
+
+#### Modified: Escape keydown (line 927)
+
+Now also sets `selectedCounter = null` and removes `.counter-btn.selected`.
+
+#### Modified: toolbox button `touchstart` (line ~903)
+
+Removed `isDragging = true` — was causing premature placement on simple taps.
+Also now clears `selectedCounter = null` and deselects counter buttons.
+
+#### Modified: `window.touchmove` (line 1130)
+
+Added `isDragging = true` — drag state is only set once actual finger movement
+is detected, keeping tap-to-select clean.
+
+#### Modified: `placePiece()` (lines ~1193–1209)
+
+After successful placement: `selectedPiece = null`, `isDragging = false`,
+deselects all `.tool-btn.selected` — the "land and release" behaviour.
+
+#### Modified: `window.touchend` (lines 1120–1129)
+
+Removed `isDragging` requirement. Now places if `selectedPiece` is set **and**
+the lift point is within canvas bounds (`0 ≤ sx ≤ canvas.width`, etc.).
+
+#### Modified: `startWave()` (line 1599)
+
+`birdSpawnTimer = ENEMY_BIRD_SPAWN_RATE` (was `0`) — one bird spawns on the
+very first tick of every wave instead of waiting 600 ticks.
+
+#### Modified: `// ── TAP TO SCARE / COUNTERMEASURE DISPATCH ──` (lines 2059–2092)
+
+Anchor renamed from `// ── TAP TO SCARE ──`. Canvas `click` and `touchend`
+handlers now dispatch to `activateLightning()` when `selectedCounter === 'lightning'`
+before falling through to `tryScareEnemy()`.
+`tryScareEnemy()` now skips birds (`if (e.type === 'bird') continue`).
+
+#### Modified: render loop (line 2743)
+
+`drawLightningStrikes()` inserted between `drawEnemies()` and `drawCastleHUD()`.
+
+---
+
+### Architecture violation flags (do not fix without review)
+
+#### 🔴 Restart reset list — missing new state
+
+Both restart handlers (canvas `click` and `touchend`, lines 1728–1755) are
+**missing resets for**:
+- `lightningStrikes.length = 0` — in-flight bolt animations survive restart
+- `selectedCounter = null` — selected countermeasure persists across restart
+
+Per CLAUDE.md rule: any new persistent state must be added to both restart
+handlers. Fix before shipping multiplayer or any scenario where stale bolt
+animations or tool state at restart would matter.
+
+#### 🟡 Render loop step 12 split
+
+CLAUDE.md lists step 12 as `drawPlacedPieces()`, `drawEnemies()`, `drawCastleHUD()`
+as a group. `drawLightningStrikes()` is now inserted between `drawEnemies()` and
+`drawCastleHUD()`. Visually correct (bolts over enemies, under HUD) — but the
+locked spec should be updated to include this step explicitly.
+
+#### 🟡 `// ── CANVAS SIZE` anchor comment stale
+
+Body still reads "change 740/520 to resize the game window" — those hardcoded
+values no longer exist (now uses `_FIT_ZOOM`). Anchor name is preserved ✓ but
+the inline note is misleading.
+
+---
+
+### Comment anchors status
+
+All `// ──` section markers present and intact. Two new anchors added:
+- `// ── COUNTERMEASURES ───` (line 951)
+- `// ── LIGHTNING STRIKE ─────` (line 1030)
