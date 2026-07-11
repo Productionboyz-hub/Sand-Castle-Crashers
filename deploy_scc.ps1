@@ -43,6 +43,13 @@ git push
 Write-Host "Deploying to Cloudflare..." -ForegroundColor Cyan
 cmd /c "cd /d `"$root`" && wrangler deploy"
 
+# 6. Sync to Google Drive
+Write-Host "Syncing to Google Drive..." -ForegroundColor Cyan
+$syncDir = "G:\My Drive\Sand Castle Crashers Sync"
+Copy-Item "$root\sandcastle_iso2.html" "$syncDir\sandcastle_iso2.html" -Force
+Copy-Item "$root\CLAUDE.md"            "$syncDir\CLAUDE.md"            -Force
+Write-Host "Synced to $syncDir" -ForegroundColor Green
+
 Write-Host ""
 Write-Host "Done! Live at:" -ForegroundColor Green
 Write-Host "  GitHub Pages : https://productionboyz-hub.github.io/Sand-Castle-Crashers" -ForegroundColor Green
