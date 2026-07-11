@@ -1,10 +1,10 @@
-<!-- Sand Castle Crashers v0.7.1 — wave counter + score state, HUD, game-over score, restart reset -->
+<!-- Sand Castle Crashers v0.7.2 — wave phase system: build/defend state machine, START WAVE button, clear-out waves -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sand Castle Crashers v0.7.1</title>
+<title>Sand Castle Crashers v0.7.2</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:#0a0e14; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; }
@@ -1372,6 +1372,50 @@ let gameOver = false;
 let waveNumber = 1;   // current wave (1-based)
 let score      = 0;   // waves survived
 
+// ── WAVE PHASE STATE MACHINE ────────────────────────────────────
+// 'build'  = rebuild break: no enemy spawns, pieces still decay.
+//            Player taps START WAVE button to begin defending.
+// 'defend' = wave active: enemies spawn until the wave's budget is
+//            exhausted. Wave ends (clear-out) when budget is spent
+//            AND all enemies are gone — then score++, next wave,
+//            back to 'build'.
+let wavePhase = 'build';
+const WAVE_SPAWN_BUDGET = 8;  // ← enemies per wave (scaling comes in v0.8.x)
+let waveSpawnsRemaining = 0;
+
+function startWave() {
+  wavePhase = 'defend';
+  waveSpawnsRemaining = WAVE_SPAWN_BUDGET;
+  // Reset spawn timers so the wave opens with a fresh cadence
+  crabSpawnTimer = 0; touristSpawnTimer = 0;
+  birdSpawnTimer = 0; bobSpawnTimer     = 0;
+}
+
+// START WAVE button hit-box (set each frame it is drawn)
+let waveBtnX = 0, waveBtnY = 0, waveBtnW = 0, waveBtnH = 0;
+function hitWaveButton(sx, sy) {
+  return sx >= waveBtnX && sx <= waveBtnX + waveBtnW &&
+         sy >= waveBtnY && sy <= waveBtnY + waveBtnH;
+}
+
+function drawWaveButton() {
+  const bw = 150, bh = 34;
+  const bx = SW/2 - bw/2, by = SH - 58;
+  waveBtnX = bx; waveBtnY = by; waveBtnW = bw; waveBtnH = bh;
+  ctx.save();
+  const pulse = Math.sin(tick * 0.08) * 0.5 + 0.5;
+  ctx.fillStyle = 'rgba(8,16,26,0.9)';
+  ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 8); ctx.fill();
+  ctx.strokeStyle = 'rgba(120,220,140,' + (0.5 + pulse * 0.5) + ')';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 8); ctx.stroke();
+  ctx.fillStyle = '#a0e8b0';
+  ctx.font = 'bold 12px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('START WAVE ' + waveNumber, SW/2, by + 22);
+  ctx.restore();
+}
+
 // Called by enemy tick when an enemy reaches the castle with no blocker
 function damageCastle() {
   if (gameOver) return;
@@ -1425,6 +1469,10 @@ function drawCastleHUD() {
   ctx.fillText('WAVE ' + waveNumber, bx, by + 24);
   ctx.fillStyle = '#7ab8cc';
   ctx.fillText('SCORE ' + score, bx + 60, by + 24);
+  if (wavePhase === 'defend') {
+    ctx.fillStyle = '#e8b060';
+    ctx.fillText('LEFT ' + (waveSpawnsRemaining + enemies.length), bx + 124, by + 24);
+  }
 
   ctx.restore();
 }
@@ -1475,6 +1523,8 @@ canvas.addEventListener('click', e => {
   gameOver  = false;
   waveNumber = 1;
   score      = 0;
+  wavePhase  = 'build';
+  waveSpawnsRemaining = 0;
   placedPieces.length = 0;
   enemies.length      = 0;
   poopSplats.length   = 0;
@@ -1487,6 +1537,8 @@ canvas.addEventListener('touchend', e => {
   gameOver  = false;
   waveNumber = 1;
   score      = 0;
+  wavePhase  = 'build';
+  waveSpawnsRemaining = 0;
   placedPieces.length = 0;
   enemies.length      = 0;
   poopSplats.length   = 0;
@@ -1572,19 +1624,20 @@ function spawnTourist() {
 // ── ENEMY TICK ────────────────────────────────────────────────────
 function tickEnemies() {
   const tideT = getTideT();
+  const canSpawn = (wavePhase === 'defend' && waveSpawnsRemaining > 0);
 
   // Spawn birds — capped at ENEMY_BIRD_MAX
   const birdCount = enemies.filter(e => e.type === 'bird').length;
   birdSpawnTimer++;
-  if (birdSpawnTimer >= ENEMY_BIRD_SPAWN_RATE && birdCount < ENEMY_BIRD_MAX) {
-    spawnBird(); birdSpawnTimer = 0;
+  if (canSpawn && birdSpawnTimer >= ENEMY_BIRD_SPAWN_RATE && birdCount < ENEMY_BIRD_MAX) {
+    spawnBird(); waveSpawnsRemaining--; birdSpawnTimer = 0;
   }
 
   // Spawn Bob — only one at a time
   const bobCount = enemies.filter(e => e.type === 'bob').length;
   bobSpawnTimer++;
-  if (bobSpawnTimer >= ENEMY_BOB_SPAWN_RATE && bobCount < ENEMY_BOB_MAX) {
-    spawnBob(); bobSpawnTimer = 0;
+  if (canSpawn && bobSpawnTimer >= ENEMY_BOB_SPAWN_RATE && bobCount < ENEMY_BOB_MAX) {
+    spawnBob(); waveSpawnsRemaining--; bobSpawnTimer = 0;
   }
 
   // Tick poop splats
@@ -1592,16 +1645,16 @@ function tickEnemies() {
   const crabCount = enemies.filter(e => e.type === 'crab').length;
   const crabRate = Math.round(ENEMY_CRAB_SPAWN_RATE * (1 - tideT * 0.4));
   crabSpawnTimer++;
-  if (crabSpawnTimer >= crabRate && crabCount < ENEMY_CRAB_MAX) {
-    spawnCrab(); crabSpawnTimer = 0;
+  if (canSpawn && crabSpawnTimer >= crabRate && crabCount < ENEMY_CRAB_MAX) {
+    spawnCrab(); waveSpawnsRemaining--; crabSpawnTimer = 0;
   }
 
   // Spawn tourists — randomly, capped at ENEMY_TOURIST_MAX
   const touristCount = enemies.filter(e => e.type === 'tourist').length;
   const touristRate = Math.round(ENEMY_TOURIST_SPAWN_RATE * (1 - tideT * 0.2));
   touristSpawnTimer++;
-  if (touristSpawnTimer >= touristRate && touristCount < ENEMY_TOURIST_MAX) {
-    spawnTourist(); touristSpawnTimer = 0;
+  if (canSpawn && touristSpawnTimer >= touristRate && touristCount < ENEMY_TOURIST_MAX) {
+    spawnTourist(); waveSpawnsRemaining--; touristSpawnTimer = 0;
   }
 
   for (let i = enemies.length - 1; i >= 0; i--) {
@@ -1775,6 +1828,14 @@ function tickEnemies() {
       }
     }
   }
+
+  // ── Wave clear-out check ─────────────────────────────────────
+  // Budget spent and every enemy gone → wave survived.
+  if (wavePhase === 'defend' && waveSpawnsRemaining <= 0 && enemies.length === 0) {
+    score++;
+    waveNumber++;
+    wavePhase = 'build';
+  }
 }
 
 // Find nearest placed piece within radius
@@ -1791,6 +1852,10 @@ function nearestPiece(col, row, radius) {
 // Tapping an enemy reduces its hp. When hp hits 0 it turns scared.
 canvas.addEventListener('click', e => {
   if (selectedPiece) return; // placement mode takes priority
+  if (!gameOver && wavePhase === 'build') {
+    const rect = canvas.getBoundingClientRect();
+    if (hitWaveButton(e.clientX - rect.left, e.clientY - rect.top)) { startWave(); return; }
+  }
   const rect = canvas.getBoundingClientRect();
   const sx = e.clientX - rect.left;
   const sy = e.clientY - rect.top;
@@ -1800,6 +1865,8 @@ canvas.addEventListener('touchend', e => {
   if (selectedPiece) return;
   const rect = canvas.getBoundingClientRect();
   const t = e.changedTouches[0];
+  if (!gameOver && wavePhase === 'build' &&
+      hitWaveButton(t.clientX - rect.left, t.clientY - rect.top)) { startWave(); return; }
   tryScareEnemy(t.clientX - rect.left, t.clientY - rect.top);
 });
 
@@ -2466,6 +2533,7 @@ function render() {
   drawPlacedPieces();   // ← draw with health-based visuals
   drawEnemies();        // ← draw enemies on top
   drawCastleHUD();      // ← castle HP bar upper-left
+  if (!gameOver && wavePhase === 'build') drawWaveButton();
 
   if (gameOver) {
     drawGameOver();     // ← game over overlay
