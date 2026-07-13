@@ -206,6 +206,28 @@ tap-to-view health on touch (`peekHealthAt()`, since touch has no hover —
 tapping a placed piece's tile shows its health card for
 `HEALTH_PEEK_DURATION` (~3s) via `healthPeekCol/Row/Timer`).
 
+**v0.8.8** shipped the fullscreen beach layout: camera locked (orbit gesture
+removed, `camAngle`/`camAngleDest` are `const 0`, pinch/wheel zoom kept),
+ocean rendered along the bottom of the screen instead of the old floating
+isometric diamond, and the tide range retuned to target a 75%-down-screen
+low tide / 50%-down high-tide ceiling — with a safety clamp
+(`SHORE_LOW`/`SHORE_HIGH_CAP`/`SHORE_HIGH_MAX` in the TIDE SETTINGS section)
+so `shoreD` can't drift outside the on-grid diagonal range and silently
+break crab spawning/foam/wave rings. Followed by a sand/water/foam polish
+pass: baked sand detail (speckles, shells, seaweed, damp-sand band), a
+water depth color ramp in `buildWaterTex`, and the shoreline smoothed to a
+single screen-space curve (`drawOceanOverlay()`, drawn after the tile loop)
+instead of the old per-tile stair-step, plus a continuous foam ribbon
+(`drawShoreFoamBand`) replacing scattered foam blobs.
+
+**Known gap:** the tide-range clamp is a safety fix, not a full solution —
+on portrait viewports (iPad/iPhone, J's primary devices) `_FIT_ZOOM` shrinks
+to satisfy the width constraint, so the low-tide waterline lands at ~50-54%
+down the screen instead of the intended 75%. Hitting 75% exactly on
+portrait would need reworking `_FIT_ZOOM`/`OY` to fit by height on tall
+aspect ratios instead of width — not done yet, flagged for a future
+session.
+
 ## Build plan (current sequence)
 
 One verified change per prompt, diagnose-before-fix discipline:
