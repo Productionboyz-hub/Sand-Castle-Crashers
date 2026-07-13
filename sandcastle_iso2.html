@@ -1,10 +1,10 @@
-<!-- Sand Castle Crashers v0.8.6 — Bob lure pacing/exit, click-to-place fix, faster pacing -->
+<!-- Sand Castle Crashers v0.8.7 — sticky piece selection for repeat placement -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sand Castle Crashers v0.8.6</title>
+<title>Sand Castle Crashers v0.8.7</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:#0a0e14; overflow:hidden; width:100vw; height:100vh; height:100dvh; }
@@ -168,7 +168,7 @@ canvas { display:block; }
 const canvas = document.getElementById('c');
 const ctx    = canvas.getContext('2d');
 const hud    = document.getElementById('hud');
-const GAME_VER = 'v0.8.6'; // ← single source of truth, shown in corner badge
+const GAME_VER = 'v0.8.7'; // ← single source of truth, shown in corner badge
 document.getElementById('version-badge').textContent = GAME_VER;
 
 // ── CANVAS SIZE — change 740/520 to resize the game window ──────
@@ -1390,17 +1390,20 @@ function screenToGrid(sx, sy) {
 
 // ── MOUSE drag tracking ───────────────────────────────────────────
 window.addEventListener('mousemove', e => {
+  // ghostCol/ghostRow track the hovered tile unconditionally — the health
+  // meter hover (drawPlacedPieces) needs this even with nothing selected.
+  const rect = canvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+  const g = screenToGrid(sx, sy);
+  ghostCol = g.col; ghostRow = g.row;
+
   if (!selectedPiece) return;
   if (!isDragging && dragStartX >= 0) {
     const moved = Math.hypot(e.clientX - dragStartX, e.clientY - dragStartY);
     if (moved > 5) isDragging = true; // drag threshold crossed
   }
-  const rect = canvas.getBoundingClientRect();
-  const sx = e.clientX - rect.left;
-  const sy = e.clientY - rect.top;
   dragFloatX = sx; dragFloatY = sy;
-  const g = screenToGrid(sx, sy);
-  ghostCol = g.col; ghostRow = g.row;
 });
 
 window.addEventListener('mouseup', e => {
@@ -1442,6 +1445,11 @@ window.addEventListener('touchend', e => {
 // health: 0–100. Decays each frame at a rate set by DECAY_RATE.
 // ← clear all: placedPieces.length = 0
 const placedPieces = [];
+
+// ── HEALTH PEEK (touch) — tapping a placed piece shows its health card
+// for a few seconds, since touch has no hover state to drive it live ──
+let healthPeekCol = -1, healthPeekRow = -1, healthPeekTimer = 0;
+const HEALTH_PEEK_DURATION = 180; // ~3s at 60fps
 
 // ── DECAY RATES — ticks to lose 1 health point ────────────────────
 // Lower number = faster decay. TWEAK these to balance gameplay.
@@ -1485,10 +1493,12 @@ function placePiece(col, row) {
   } else {
     placedPieces.push({ id: selectedPiece, col, row, health: 100, decayTimer: 0 });
   }
-  // Release selection after placing
-  selectedPiece = null;
+  // Selection is sticky — stays selected for repeat placement. Only clear
+  // the drag state so the floating drag badge disappears on drop; the
+  // ghost preview keeps following the cursor since selectedPiece persists.
   isDragging = false;
-  document.querySelectorAll('.tool-btn.selected').forEach(b => b.classList.remove('selected'));
+  dragFloatX = -1;
+  dragFloatY = -1;
 }
 
 // ── DETERIORATION TICK — called once per render frame ─────────────
@@ -1516,6 +1526,11 @@ canvas.addEventListener('click', e => {
 
 // ── Draw all placed pieces ────────────────────────────────────────
 function drawPlacedPieces() {
+  if (healthPeekTimer > 0) {
+    healthPeekTimer--;
+    if (healthPeekTimer <= 0) { healthPeekCol = -1; healthPeekRow = -1; }
+  }
+
   // Sort by rotated diagonal so depth order stays correct at any camera angle
   const sorted = [...placedPieces].sort((a,b) => {
     const ra = rotateGrid(a.col, a.row);
@@ -1552,8 +1567,10 @@ function drawPlacedPieces() {
 
     ctx.restore();
 
-    // ── Hover health meter — shown when ghost tile matches this piece ──
-    const isHovered = (ghostCol === p.col && ghostRow === p.row);
+    // ── Hover health meter — shown when ghost tile matches this piece,
+    // or (touch) when this tile was recently tapped-to-peek ───────────
+    const isHovered = (ghostCol === p.col && ghostRow === p.row) ||
+                       (healthPeekCol === p.col && healthPeekRow === p.row);
     if (isHovered) drawHealthMeter(p);
   });
 }
@@ -2045,6 +2062,7 @@ canvas.addEventListener('click', e => {
   truck = null;
   coins = 0;
   truckCooldown = 0;
+  healthPeekCol = -1; healthPeekRow = -1; healthPeekTimer = 0;
   selectedCounter = null;
   document.querySelectorAll('.counter-btn.selected').forEach(b => b.classList.remove('selected'));
 });
@@ -2067,6 +2085,7 @@ canvas.addEventListener('touchend', e => {
   truck = null;
   coins = 0;
   truckCooldown = 0;
+  healthPeekCol = -1; healthPeekRow = -1; healthPeekTimer = 0;
   selectedCounter = null;
   document.querySelectorAll('.counter-btn.selected').forEach(b => b.classList.remove('selected'));
 });
@@ -2400,6 +2419,7 @@ canvas.addEventListener('click', e => {
   if (selectedCounter === 'hole')      { activateHole(sx, sy); return; }
   if (selectedCounter === 'metal')     { activateLure(sx, sy); return; }
   if (selectedCounter === 'cleaner')   { activateCleaner(sx, sy); return; }
+  peekHealthAt(sx, sy);
   tryScareEnemy(sx, sy);
 });
 canvas.addEventListener('touchend', e => {
@@ -2413,8 +2433,19 @@ canvas.addEventListener('touchend', e => {
   if (selectedCounter === 'hole')      { activateHole(sx, sy); return; }
   if (selectedCounter === 'metal')     { activateLure(sx, sy); return; }
   if (selectedCounter === 'cleaner')   { activateCleaner(sx, sy); return; }
+  peekHealthAt(sx, sy);
   tryScareEnemy(sx, sy);
 });
+
+// Tap-to-view (touch has no hover): tapping a placed piece's tile shows
+// its health card for HEALTH_PEEK_DURATION ticks. No-op if the tile is bare.
+function peekHealthAt(sx, sy) {
+  const g = screenToGrid(sx, sy);
+  const tapped = placedPieces.find(p => p.col === g.col && p.row === g.row);
+  if (tapped) {
+    healthPeekCol = g.col; healthPeekRow = g.row; healthPeekTimer = HEALTH_PEEK_DURATION;
+  }
+}
 
 function tryScareEnemy(sx, sy) {
   // Birds are handled by lightning countermeasure — skip them here
