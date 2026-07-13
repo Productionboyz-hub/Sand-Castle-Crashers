@@ -1,10 +1,10 @@
-<!-- Sand Castle Crashers v0.8.3 — fix HUD overlap, fit-to-screen between panels -->
+<!-- Sand Castle Crashers v0.8.4 — add hole/metal/cleaner countermeasure icons -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sand Castle Crashers v0.8.3</title>
+<title>Sand Castle Crashers v0.8.4</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:#0a0e14; overflow:hidden; width:100vw; height:100vh; }
@@ -167,7 +167,7 @@ canvas { display:block; }
 const canvas = document.getElementById('c');
 const ctx    = canvas.getContext('2d');
 const hud    = document.getElementById('hud');
-const GAME_VER = 'v0.8.3'; // ← single source of truth, shown in corner badge
+const GAME_VER = 'v0.8.4'; // ← single source of truth, shown in corner badge
 document.getElementById('version-badge').textContent = GAME_VER;
 
 // ── CANVAS SIZE — change 740/520 to resize the game window ──────
@@ -999,6 +999,126 @@ const COUNTERS = [
       ctx.lineTo(cx + 2, cy - 2);
       ctx.lineTo(cx - 4, cy + 12);
       ctx.stroke();
+      ctx.restore();
+    }
+  },
+  {
+    id: 'hole',
+    label: 'Hole',
+    // Draw a dark pit in the sand with a shovel leaning beside it
+    drawIcon(ctx, cx, cy) {
+      ctx.save();
+      ctx.fillStyle = '#3a2a1a';
+      ctx.shadowColor = '#000000';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.ellipse(cx - 4, cy + 4, 13, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#1a1008';
+      ctx.beginPath();
+      ctx.ellipse(cx - 4, cy + 4, 8, 4.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = '#c98a3f';
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = '#88aaff';
+      ctx.shadowBlur = 4;
+      ctx.beginPath();
+      ctx.moveTo(cx + 12, cy + 12);
+      ctx.lineTo(cx + 18, cy - 10);
+      ctx.stroke();
+      ctx.fillStyle = '#b8c4cc';
+      ctx.beginPath();
+      ctx.moveTo(cx + 18, cy - 10);
+      ctx.lineTo(cx + 22, cy - 14);
+      ctx.lineTo(cx + 21, cy - 6);
+      ctx.lineTo(cx + 16, cy - 5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 0.75;
+      ctx.stroke();
+      ctx.restore();
+    }
+  },
+  {
+    id: 'metal',
+    label: 'Metal',
+    // Draw a shiny gold coin/nugget with sparkle glints
+    drawIcon(ctx, cx, cy) {
+      ctx.save();
+      ctx.fillStyle = '#e8b923';
+      ctx.shadowColor = '#fff2a0';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 11, 9, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#8a5f10';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = '#fff6cc';
+      ctx.beginPath();
+      ctx.ellipse(cx - 3, cy - 3, 4, 2.5, -0.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.2;
+      ctx.shadowColor = '#ffffff';
+      ctx.shadowBlur = 6;
+      const sparkle = (x, y, r) => {
+        ctx.beginPath();
+        ctx.moveTo(x - r, y); ctx.lineTo(x + r, y);
+        ctx.moveTo(x, y - r); ctx.lineTo(x, y + r);
+        ctx.stroke();
+      };
+      sparkle(cx + 14, cy - 10, 3);
+      sparkle(cx - 15, cy + 8, 2);
+      ctx.restore();
+    }
+  },
+  {
+    id: 'cleaner',
+    label: 'Cleaner Truck',
+    // Draw a side-view truck with a front scoop/brush in beach-toy colors
+    drawIcon(ctx, cx, cy) {
+      ctx.save();
+      ctx.shadowColor = '#88aaff';
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = '#3fa9e0';
+      ctx.beginPath();
+      ctx.moveTo(cx - 18, cy + 8);
+      ctx.lineTo(cx - 18, cy - 2);
+      ctx.lineTo(cx - 8, cy - 10);
+      ctx.lineTo(cx + 2, cy - 10);
+      ctx.lineTo(cx + 2, cy + 8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.fillStyle = '#f2c94c';
+      ctx.fillRect(cx + 2, cy - 2, 14, 10);
+      ctx.strokeRect(cx + 2, cy - 2, 14, 10);
+
+      ctx.strokeStyle = '#e0522d';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(cx - 20, cy + 8);
+      ctx.quadraticCurveTo(cx - 24, cy + 2, cx - 20, cy - 4);
+      ctx.stroke();
+
+      ctx.fillStyle = '#222222';
+      ctx.beginPath();
+      ctx.arc(cx - 12, cy + 10, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx + 10, cy + 10, 3.5, 0, Math.PI * 2);
+      ctx.fill();
       ctx.restore();
     }
   }

@@ -176,6 +176,11 @@ Old embedded prototype said v0.6.1; iso file was v0.5.x. Reconciled at
 script (added v0.8.2 — drives the on-screen badge). Miss one and the badge
 lies.
 
+**v0.8.4** shipped the hole/metal/cleaner countermeasure button icons
+(icon-only, no gameplay logic yet). The v0.8.4 slot had previously been
+earmarked in conversation for an iPad `100dvh` viewport fix — that fix was
+not part of this change and now moves to **v0.8.5**.
+
 ## Build plan (current sequence)
 
 One verified change per prompt, diagnose-before-fix discipline:
