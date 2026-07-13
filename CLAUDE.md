@@ -162,11 +162,25 @@ so a deploy can be confirmed via browser dev tools → Network → response head
   stamps `X-Worker-Ver`, returns it. No embedded HTML — never go back to embedding.
 - Deploy = update `public/index.html` to match `sandcastle_iso2.html`, bump
   `WORKER_VER` in the Worker, run `wrangler deploy`.
-- Verify deploy: on-screen version badge (bottom-right corner of the live site)
-  shows the new version string. Fallback: browser tab title or F12 → Sources →
-  `index.html` line 1. (Cloudflare's Assets binding caches at the edge and
-  strips the custom `X-Worker-Ver` header on cached responses; if using curl,
-  add `?v=<timestamp>` to bust the cache.)
+
+#### Deploy checklist — a deploy is NOT done until step 5
+
+1. Copy `sandcastle_iso2.html` → `public/index.html`.
+2. Grep the version string in `public/index.html` and confirm it matches
+   the source file (e.g. `GAME_VER`) — this catches a stale-copy deploy
+   before it ships (has happened: v0.8.5 and v0.8.6 both had source edits
+   sit uncommitted/uncopied for a full session before this check existed).
+3. Run `deploy_scc.ps1` (copies again, commits with explicit path adds,
+   pushes, runs `wrangler deploy`).
+4. Show the `wrangler deploy` success output (upload confirmation +
+   `Current Version ID`).
+5. **User confirms the live on-screen version badge** (bottom-right corner
+   of the live site) shows the new version string. Fallback: browser tab
+   title or F12 → Sources → `index.html` line 1. (Cloudflare's Assets
+   binding caches at the edge and strips the custom `X-Worker-Ver` header
+   on cached responses; if using curl, add `?v=<timestamp>` to bust the
+   cache.) Steps 1–4 only prove the deploy was *shipped* — step 5 is the
+   only step that proves it was *received*.
 
 ### Version numbering
 
@@ -180,6 +194,17 @@ lies.
 (icon-only, no gameplay logic yet). The v0.8.4 slot had previously been
 earmarked in conversation for an iPad `100dvh` viewport fix — that fix was
 not part of this change and now moves to **v0.8.5**.
+
+**v0.8.7** shipped: sticky piece/eraser selection (`placePiece()` no longer
+clears `selectedPiece`/`.selected` on success, so repeat placement doesn't
+require re-selecting — deselect is still only via re-tapping the selected
+toolbox button or Escape); a hover health-meter fix (the meter previously
+only worked while a piece was selected, because `ghostCol`/`ghostRow` were
+gated behind `if (!selectedPiece) return;` in `mousemove` — that gate was
+removed so hover-to-view-health works with nothing selected); and
+tap-to-view health on touch (`peekHealthAt()`, since touch has no hover —
+tapping a placed piece's tile shows its health card for
+`HEALTH_PEEK_DURATION` (~3s) via `healthPeekCol/Row/Timer`).
 
 ## Build plan (current sequence)
 
