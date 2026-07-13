@@ -1,10 +1,10 @@
-<!-- Sand Castle Crashers v0.8.4 — add hole/metal/cleaner countermeasure icons -->
+<!-- Sand Castle Crashers v0.8.5 — hole/metal/cleaner countermeasures functional -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sand Castle Crashers v0.8.4</title>
+<title>Sand Castle Crashers v0.8.5</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:#0a0e14; overflow:hidden; width:100vw; height:100vh; }
@@ -167,7 +167,7 @@ canvas { display:block; }
 const canvas = document.getElementById('c');
 const ctx    = canvas.getContext('2d');
 const hud    = document.getElementById('hud');
-const GAME_VER = 'v0.8.4'; // ← single source of truth, shown in corner badge
+const GAME_VER = 'v0.8.5'; // ← single source of truth, shown in corner badge
 document.getElementById('version-badge').textContent = GAME_VER;
 
 // ── CANVAS SIZE — change 740/520 to resize the game window ──────
@@ -970,8 +970,15 @@ window.addEventListener('keydown', e => {
 });
 
 // ── COUNTERMEASURES ───────────────────────────────────────────────
-let selectedCounter = null;      // 'lightning' | null
+let selectedCounter = null;      // 'lightning' | 'hole' | 'metal' | 'cleaner' | null
 let lightningStrikes = [];       // [{x,y,timer,maxTimer}] — active bolt animations
+const holes = [];                // [{col,row,uses}] — crab traps, cap HOLE_MAX
+const HOLE_MAX = 3;
+const lures = [];                // [{col,row,timer}] — Bob lures, cap LURE_MAX
+const LURE_MAX = 1;
+let truck = null;                // {col,row,dirC} — active cleaner truck, or null
+let coins = 0;
+let truckCooldown = 0;
 
 // Definitions for counter tools shown in toolbox
 const COUNTERS = [
@@ -1228,6 +1235,132 @@ function drawLightningStrikes() {
     s.timer--;
     if (s.timer <= 0) lightningStrikes.splice(i, 1);
   }
+}
+
+// ── HOLE (crab trap) ──────────────────────────────────────────────
+function activateHole(sx, sy) {
+  if (holes.length >= HOLE_MAX) return;
+  const g = screenToGrid(sx, sy);
+  if (isTileWater(g.col, g.row)) return;
+  if (holes.some(h => h.col === g.col && h.row === g.row)) return;
+  holes.push({ col: g.col, row: g.row, uses: 2 });
+}
+
+function drawHoles() {
+  for (const h of holes) {
+    const sp = iso(h.col + 0.5, h.row + 0.5, 0.02);
+    ctx.save();
+    ctx.translate(sp.x, sp.y);
+    ctx.fillStyle = '#c9a06a';
+    ctx.beginPath(); ctx.ellipse(0, 0, 15, 8, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#241708';
+    ctx.shadowColor = '#000000';
+    ctx.shadowBlur = 6;
+    ctx.beginPath(); ctx.ellipse(0, 0, 11, 5.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+    for (let p = 0; p < h.uses; p++) {
+      ctx.fillStyle = '#ffe08a';
+      ctx.beginPath(); ctx.arc(-6 + p * 6, 12, 1.6, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+// ── METAL (Bob lure) ──────────────────────────────────────────────
+function activateLure(sx, sy) {
+  if (lures.length >= LURE_MAX) return;
+  const g = screenToGrid(sx, sy);
+  if (isTileWater(g.col, g.row)) return;
+  lures.push({ col: g.col, row: g.row, timer: 0 });
+}
+
+function drawLures() {
+  for (const l of lures) {
+    const sp = iso(l.col + 0.5, l.row + 0.5, 0.05);
+    ctx.save();
+    ctx.translate(sp.x, sp.y);
+    ctx.fillStyle = '#e8b923';
+    ctx.shadowColor = '#fff2a0';
+    ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.ellipse(0, 0, 8, 6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#8a5f10';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    const spark = (x, y, r) => {
+      ctx.beginPath();
+      ctx.moveTo(x - r, y); ctx.lineTo(x + r, y);
+      ctx.moveTo(x, y - r); ctx.lineTo(x, y + r);
+      ctx.stroke();
+    };
+    spark(9, -7, 2.5);
+    spark(-10, 5, 2);
+    ctx.restore();
+  }
+}
+
+// ── CLEANER TRUCK (coin income) ───────────────────────────────────
+function activateCleaner(sx, sy) {
+  if (truck || truckCooldown > 0) return;
+  const g = screenToGrid(sx, sy);
+  const midRow = Math.floor(GROWS / 2);
+  if (g.col < GCOLS / 2) {
+    truck = { col: -1, row: midRow, dirC: 1 };
+  } else {
+    truck = { col: GCOLS, row: midRow, dirC: -1 };
+  }
+}
+
+function tickTruck() {
+  if (truckCooldown > 0) truckCooldown--;
+  if (!truck) return;
+  truck.col += truck.dirC * 0.02;
+  for (let i = poopSplats.length - 1; i >= 0; i--) {
+    const p = poopSplats[i];
+    const pDist = Math.sqrt((p.col - truck.col) ** 2 + (p.row - truck.row) ** 2);
+    if (pDist < 1) {
+      poopSplats.splice(i, 1);
+      coins += 2;
+    }
+  }
+  if (tick % 60 === 0) coins++;
+  if (truck.col < -2 || truck.col > GCOLS + 2) {
+    truck = null;
+    truckCooldown = 900;
+  }
+}
+
+function drawTruck() {
+  if (!truck) return;
+  const sp = iso(truck.col, truck.row, 0.02);
+  const flip = truck.dirC < 0 ? -1 : 1;
+  ctx.save();
+  ctx.translate(sp.x, sp.y);
+  ctx.scale(flip, 1);
+  ctx.shadowColor = '#88aaff';
+  ctx.shadowBlur = 6;
+  ctx.fillStyle = '#3fa9e0';
+  ctx.beginPath();
+  ctx.moveTo(-18, 8); ctx.lineTo(-18, -2); ctx.lineTo(-8, -10);
+  ctx.lineTo(2, -10); ctx.lineTo(2, 8); ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.fillStyle = '#f2c94c';
+  ctx.fillRect(2, -2, 14, 10);
+  ctx.strokeRect(2, -2, 14, 10);
+  ctx.strokeStyle = '#e0522d';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(-20, 8); ctx.quadraticCurveTo(-24, 2, -20, -4);
+  ctx.stroke();
+  ctx.fillStyle = '#222222';
+  ctx.beginPath(); ctx.arc(-12, 10, 3.5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(10, 10, 3.5, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
 }
 
 // ── DRAG STATE & GHOST ────────────────────────────────────────────
@@ -1829,6 +1962,9 @@ function drawCastleHUD() {
   ctx.fillText('WAVE ' + waveNumber, bx, by + 24);
   ctx.fillStyle = '#7ab8cc';
   ctx.fillText('SCORE ' + score, bx + 60, by + 24);
+  const scoreW = ctx.measureText('SCORE ' + score).width;
+  ctx.fillStyle = '#e8c060';
+  ctx.fillText('COINS ' + coins, bx + 60 + scoreW + 10, by + 24);
   if (wavePhase === 'defend') {
     ctx.fillStyle = '#e8b060';
     ctx.fillText('LEFT ' + (waveSpawnsRemaining + enemies.length), bx + 124, by + 24);
@@ -1891,6 +2027,11 @@ canvas.addEventListener('click', e => {
   crabSpawnTimer = 0; touristSpawnTimer = 0;
   birdSpawnTimer = 0; bobSpawnTimer     = 0;
   lightningStrikes.length = 0;
+  holes.length = 0;
+  lures.length = 0;
+  truck = null;
+  coins = 0;
+  truckCooldown = 0;
   selectedCounter = null;
   document.querySelectorAll('.counter-btn.selected').forEach(b => b.classList.remove('selected'));
 });
@@ -1908,6 +2049,11 @@ canvas.addEventListener('touchend', e => {
   crabSpawnTimer = 0; touristSpawnTimer = 0;
   birdSpawnTimer = 0; bobSpawnTimer     = 0;
   lightningStrikes.length = 0;
+  holes.length = 0;
+  lures.length = 0;
+  truck = null;
+  coins = 0;
+  truckCooldown = 0;
   selectedCounter = null;
   document.querySelectorAll('.counter-btn.selected').forEach(b => b.classList.remove('selected'));
 });
@@ -2008,6 +2154,7 @@ function tickEnemies() {
 
   // Tick poop splats
   tickPoopSplats();
+  tickTruck();
   const crabCount = enemies.filter(e => e.type === 'crab').length;
   const crabRate = Math.round(ENEMY_CRAB_SPAWN_RATE * (1 - tideT * 0.4) * waveRateMult());
   crabSpawnTimer++;
@@ -2049,6 +2196,21 @@ function tickEnemies() {
     // ── CRAB behaviour ────────────────────────────────────────────
     if (e.type === 'crab') {
       e.legPhase += 0.18;
+
+      // ── Hole trap — crabs that stumble into an active hole are caught ──
+      let caughtInHole = false;
+      for (let hi = holes.length - 1; hi >= 0; hi--) {
+        const h = holes[hi];
+        const hDist = Math.sqrt((e.col - h.col) ** 2 + (e.row - h.row) ** 2);
+        if (hDist < 0.6) {
+          enemies.splice(i, 1);
+          h.uses--;
+          if (h.uses <= 0) holes.splice(hi, 1);
+          caughtInHole = true;
+          break;
+        }
+      }
+      if (caughtInHole) continue;
 
       // ── Land timer — crabs dry out if away from water too long ──
       // ENEMY_CRAB_LAND_LIMIT ticks on land before they must retreat
@@ -2222,6 +2384,9 @@ canvas.addEventListener('click', e => {
   const sy = e.clientY - rect.top;
   if (!gameOver && wavePhase === 'build' && hitWaveButton(sx, sy)) { startWave(); return; }
   if (selectedCounter === 'lightning') { activateLightning(sx, sy); return; }
+  if (selectedCounter === 'hole')      { activateHole(sx, sy); return; }
+  if (selectedCounter === 'metal')     { activateLure(sx, sy); return; }
+  if (selectedCounter === 'cleaner')   { activateCleaner(sx, sy); return; }
   tryScareEnemy(sx, sy);
 });
 canvas.addEventListener('touchend', e => {
@@ -2232,6 +2397,9 @@ canvas.addEventListener('touchend', e => {
   const sy = t.clientY - rect.top;
   if (!gameOver && wavePhase === 'build' && hitWaveButton(sx, sy)) { startWave(); return; }
   if (selectedCounter === 'lightning') { activateLightning(sx, sy); return; }
+  if (selectedCounter === 'hole')      { activateHole(sx, sy); return; }
+  if (selectedCounter === 'metal')     { activateLure(sx, sy); return; }
+  if (selectedCounter === 'cleaner')   { activateCleaner(sx, sy); return; }
   tryScareEnemy(sx, sy);
 });
 
@@ -2575,6 +2743,26 @@ function tickBob(e, i) {
     return;
   }
 
+  // ── Lure — if a metal lure exists, Bob beelines for it instead of the
+  // castle and does no piece/castle damage while it's out ──────────────
+  if (lures.length > 0) {
+    const lure = lures[0];
+    const lc = lure.col - e.col, lr = lure.row - e.row;
+    const lDist = Math.sqrt(lc*lc + lr*lr) || 1;
+    if (lDist < 0.8) {
+      lure.timer++;
+      if (lure.timer >= 300) {
+        lures.splice(lures.indexOf(lure), 1);
+        e.state = 'scared';
+        e.scaredTimer = 0;
+      }
+    } else {
+      e.col += (lc/lDist) * e.speed;
+      e.row += (lr/lDist) * e.speed;
+    }
+    return;
+  }
+
   // Wander slowly toward castle with gentle random drift
   e.wanderTimer++;
   if (e.wanderTimer > 120) {
@@ -2896,8 +3084,11 @@ function render() {
     tickEnemies();      // ← move + attack enemies
   }
 
+  drawHoles();            // ← crab-trap pits, drawn before placed pieces
   drawPlacedPieces();     // ← draw with health-based visuals
   drawEnemies();          // ← draw enemies on top
+  drawLures();            // ← Bob-lure coin clusters
+  drawTruck();            // ← cleaner truck, if active
   drawLightningStrikes(); // ← countermeasure bolt animations
   drawCastleHUD();        // ← castle HP bar upper-left
   if (!gameOver && wavePhase === 'build') drawWaveButton();
