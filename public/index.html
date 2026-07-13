@@ -1,17 +1,17 @@
-<!-- Sand Castle Crashers v0.8.5 — hole/metal/cleaner countermeasures functional -->
+<!-- Sand Castle Crashers v0.8.6 — Bob lure pacing/exit, click-to-place fix, faster pacing -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sand Castle Crashers v0.8.5</title>
+<title>Sand Castle Crashers v0.8.6</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { background:#0a0e14; overflow:hidden; width:100vw; height:100vh; }
+body { background:#0a0e14; overflow:hidden; width:100vw; height:100vh; height:100dvh; }
 canvas { display:block; }
 #hud {
   position: absolute;
-  bottom: 6px;
+  bottom: calc(6px + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   color:#7ab8cc;
@@ -24,7 +24,7 @@ canvas { display:block; }
 }
 #version-badge {
   position: absolute;
-  bottom: 6px;
+  bottom: calc(6px + env(safe-area-inset-bottom));
   right: 8px;
   color: #ffffff;
   font: bold 12px/1 monospace;
@@ -40,6 +40,7 @@ canvas { display:block; }
   position: relative;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   line-height: 0;
 }
 
@@ -167,7 +168,7 @@ canvas { display:block; }
 const canvas = document.getElementById('c');
 const ctx    = canvas.getContext('2d');
 const hud    = document.getElementById('hud');
-const GAME_VER = 'v0.8.5'; // ← single source of truth, shown in corner badge
+const GAME_VER = 'v0.8.6'; // ← single source of truth, shown in corner badge
 document.getElementById('version-badge').textContent = GAME_VER;
 
 // ── CANVAS SIZE — change 740/520 to resize the game window ──────
@@ -929,14 +930,15 @@ PIECES.forEach(piece => {
   toolboxEl.appendChild(btn);
 
   // ── Click to select (fallback for mouse users) ───────────────
+  // Selection itself is applied eagerly on mousedown (so a drag can start
+  // immediately); this handler only fires for a plain, non-drag click, and
+  // its sole job is to toggle OFF a piece that was already selected before
+  // this mousedown — using wasSelectedAtMousedown captured below.
+  let wasSelectedAtMousedown = false;
   btn.addEventListener('click', () => {
-    if (selectedPiece === piece.id) {
+    if (wasSelectedAtMousedown) {
       selectedPiece = null;
       btn.classList.remove('selected');
-    } else {
-      document.querySelectorAll('.tool-btn.selected').forEach(b=>b.classList.remove('selected'));
-      selectedPiece = piece.id;
-      btn.classList.add('selected');
     }
   });
 
@@ -950,12 +952,17 @@ PIECES.forEach(piece => {
     // isDragging NOT set here — touchmove sets it so tap-to-select works cleanly
   }, { passive: false });
 
-  // ── Mouse: mousedown on button starts drag ────────────────────
+  // ── Mouse: mousedown selects + arms a possible drag ────────────
+  // isDragging is NOT set here — the window mousemove handler sets it only
+  // once the cursor has moved >5px from this point, so a plain click (no
+  // movement) just selects instead of firing a stale placePiece on release.
   btn.addEventListener('mousedown', e => {
+    wasSelectedAtMousedown = (selectedPiece === piece.id);
     document.querySelectorAll('.tool-btn.selected').forEach(b=>b.classList.remove('selected'));
     selectedPiece = piece.id;
     btn.classList.add('selected');
-    isDragging = true;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
   });
 });
 
@@ -1370,6 +1377,7 @@ function drawTruck() {
 let isDragging  = false;
 let ghostCol    = -1, ghostRow = -1;
 let dragFloatX  = -1, dragFloatY = -1;
+let dragStartX  = -1, dragStartY = -1; // mousedown anchor point — drag-threshold detection
 
 // Convert screen px → iso grid col/row
 function screenToGrid(sx, sy) {
@@ -1383,6 +1391,10 @@ function screenToGrid(sx, sy) {
 // ── MOUSE drag tracking ───────────────────────────────────────────
 window.addEventListener('mousemove', e => {
   if (!selectedPiece) return;
+  if (!isDragging && dragStartX >= 0) {
+    const moved = Math.hypot(e.clientX - dragStartX, e.clientY - dragStartY);
+    if (moved > 5) isDragging = true; // drag threshold crossed
+  }
   const rect = canvas.getBoundingClientRect();
   const sx = e.clientX - rect.left;
   const sy = e.clientY - rect.top;
@@ -1392,6 +1404,7 @@ window.addEventListener('mousemove', e => {
 });
 
 window.addEventListener('mouseup', e => {
+  dragStartX = -1; dragStartY = -1;
   if (!isDragging || !selectedPiece) { isDragging = false; return; }
   isDragging = false;
   placePiece(ghostCol, ghostRow);
@@ -2597,7 +2610,7 @@ function drawTourist(e) {
 
 // ── BIRD & BOB CONSTANTS ─────────────────────────────────────────
 const ENEMY_BIRD_SPAWN_RATE  = 600;  // ← ticks between bird flock spawns (~10s at 60fps)
-const ENEMY_BOB_SPAWN_RATE   = 900;  // ← ticks between Bob spawns (~15s at 60fps)
+const ENEMY_BOB_SPAWN_RATE   = 600;  // ← ticks between Bob spawns (~10s at 60fps)
 const ENEMY_BIRD_MAX         = 4;    // ← max birds at once
 const ENEMY_BOB_MAX          = 1;    // ← only one Bob at a time
 const ENEMY_BIRD_POOP_RATE   = 220;  // ← ticks between poop drops per bird
@@ -2650,7 +2663,7 @@ function spawnBob() {
     damageTimer:  0,
     wanderAngle:  fromLeft ? 0 : Math.PI, // general heading
     wanderTimer:  0,
-    speed:        0.003 + Math.random() * 0.002, // slow old man walk
+    speed:        0.006 + Math.random() * 0.004, // brisk old man walk
     beeping:      false,     // true when near a piece
   });
 }
@@ -2743,22 +2756,43 @@ function tickBob(e, i) {
     return;
   }
 
-  // ── Lure — if a metal lure exists, Bob beelines for it instead of the
-  // castle and does no piece/castle damage while it's out ──────────────
+  // ── Leaving — dig complete, walk to the nearest grid edge and despawn ──
+  if (e.state === 'leaving') {
+    e.col += Math.cos(e.leavingAngle) * e.speed * 2;
+    e.row += Math.sin(e.leavingAngle) * e.speed * 2;
+    if (e.col < -1 || e.col > GCOLS+1 || e.row < -1 || e.row > GROWS+1) {
+      enemies.splice(i, 1);
+    }
+    return;
+  }
+
+  // ── Lure — if a metal lure exists, Bob beelines for it (straight-line,
+  // bypassing wander) at 3x speed, does no piece/castle damage while it's
+  // out, and freezes to dig once he arrives ─────────────────────────────
   if (lures.length > 0) {
     const lure = lures[0];
     const lc = lure.col - e.col, lr = lure.row - e.row;
     const lDist = Math.sqrt(lc*lc + lr*lr) || 1;
     if (lDist < 0.8) {
+      // Digging — frozen in place, detector sweeps fast, beep glows steadily
+      e.detectorAngle = Math.sin(tick * 0.35) * 0.9;
+      e.beeping = true;
       lure.timer++;
       if (lure.timer >= 300) {
         lures.splice(lures.indexOf(lure), 1);
-        e.state = 'scared';
-        e.scaredTimer = 0;
+        const distLeft = e.col, distRight = GCOLS - e.col;
+        const distTop = e.row, distBottom = GROWS - e.row;
+        const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+        e.leavingAngle =
+          minDist === distLeft  ? Math.PI :
+          minDist === distRight ? 0 :
+          minDist === distTop   ? -Math.PI / 2 : Math.PI / 2;
+        e.state = 'leaving';
       }
     } else {
-      e.col += (lc/lDist) * e.speed;
-      e.row += (lr/lDist) * e.speed;
+      e.beeping = false;
+      e.col += (lc / lDist) * e.speed * 3;
+      e.row += (lr / lDist) * e.speed * 3;
     }
     return;
   }
@@ -2982,6 +3016,18 @@ function drawBob(e) {
   for (let j = 0; j < e.hp; j++) {
     ctx.fillStyle = '#ffdd44';
     ctx.beginPath(); ctx.arc(-4*s + j*5*s, -24*s, 2*s, 0, Math.PI*2); ctx.fill();
+  }
+
+  // Held-up coin — visible while triumphantly leaving with his find
+  if (e.state === 'leaving') {
+    ctx.fillStyle = '#e8b923';
+    ctx.shadowColor = '#fff2a0';
+    ctx.shadowBlur = 6;
+    ctx.beginPath(); ctx.arc(0, -26*s, 3*s, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#8a5f10';
+    ctx.lineWidth = 1;
+    ctx.stroke();
   }
 
   ctx.restore();
