@@ -1,10 +1,10 @@
-<!-- Sand Castle Crashers v0.8.7 — sticky piece selection for repeat placement -->
+<!-- Sand Castle Crashers v0.8.8 — locked camera, fullscreen beach backdrop, retuned tide range -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sand Castle Crashers v0.8.7</title>
+<title>Sand Castle Crashers v0.8.8</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:#0a0e14; overflow:hidden; width:100vw; height:100vh; height:100dvh; }
@@ -168,7 +168,7 @@ canvas { display:block; }
 const canvas = document.getElementById('c');
 const ctx    = canvas.getContext('2d');
 const hud    = document.getElementById('hud');
-const GAME_VER = 'v0.8.7'; // ← single source of truth, shown in corner badge
+const GAME_VER = 'v0.8.8'; // ← single source of truth, shown in corner badge
 document.getElementById('version-badge').textContent = GAME_VER;
 
 // ── CANVAS SIZE — change 740/520 to resize the game window ──────
@@ -229,21 +229,16 @@ function TW() { return TW_BASE * camZoom; }
 function TH() { return TH_BASE * camZoom; }
 
 // ── ORBIT CAMERA ──────────────────────────────────────────────────
-// camAngle: current rotation in radians (0 = default iso view)
-// camAngle is modified by drag gestures — left drag = counter-clockwise,
-// right drag = clockwise.
-// Castle center (BC+1.5, BR+1.5) is the pivot point.
-// ← TWEAK: ORBIT_SENSITIVITY controls how fast a drag rotates the view
-let camAngle       = 0;          // current camera angle (radians)
-let camAngleDest   = 0;          // target angle (smoothed toward)
-let orbitDragging  = false;      // true while drag-to-orbit is active
-let orbitLastX     = 0;          // last drag X position
-let orbitActive    = false;      // true when NOT using toolbox drag
-
-const ORBIT_SENSITIVITY = 0.008; // ← TWEAK: drag pixels → radians
-const ORBIT_SMOOTH      = 0.12;  // ← TWEAK: 0=instant, 1=never arrives
-const ORBIT_PIVOT_C     = 5.5;   // castle center col (BC+1.5 = 3+1.5+1 for keep)
-const ORBIT_PIVOT_R     = 5.5;   // castle center row (BR+1.5)
+// v0.8.8: the orbit gesture is permanently disabled (fullscreen beach
+// look — see FULLSCREEN BACKDROP). camAngle/camAngleDest are `const 0` so
+// they can never be moved again, but rotateGrid()/iso() still route every
+// draw call through them unchanged — the camera math itself is untouched,
+// it's just permanently pointed at angle 0.
+// Castle center (BC+1.5, BR+1.5) is still the pivot point rotateGrid uses.
+const camAngle       = 0;        // locked camera angle (radians) — v0.8.8
+const camAngleDest   = 0;        // locked target angle — v0.8.8
+const ORBIT_PIVOT_C  = 5.5;      // castle center col (BC+1.5 = 3+1.5+1 for keep)
+const ORBIT_PIVOT_R  = 5.5;      // castle center row (BR+1.5)
 
 // Rotate a grid position around the pivot by camAngle
 function rotateGrid(col, row) {
@@ -267,35 +262,12 @@ function iso(col, row, z) {
   };
 }
 
-// ── Orbit drag — pointer events on canvas ─────────────────────────
-// Only activates when no piece is selected (selectedPiece === null)
-// so it doesn't conflict with placement drag.
-canvas.addEventListener('mousedown', e => {
-  if (selectedPiece || selectedCounter) return; // toolbox drag takes priority
-  orbitDragging = true;
-  orbitLastX = e.clientX;
-});
-
-window.addEventListener('mousemove', e => {
-  if (!orbitDragging) return;
-  const dx = e.clientX - orbitLastX;
-  camAngleDest += dx * ORBIT_SENSITIVITY;
-  orbitLastX = e.clientX;
-});
-
-window.addEventListener('mouseup', () => { orbitDragging = false; });
-
-// Touch orbit + pinch-to-zoom
-// 1 finger = orbit, 2 fingers = pinch zoom
+// ── Pinch-to-zoom (touch) — orbit gesture removed, zoom kept ──────
 let pinchLastDist = 0;
 
 canvas.addEventListener('touchstart', e => {
   if (selectedPiece || selectedCounter) return;
-  if (e.touches.length === 1) {
-    orbitDragging = true;
-    orbitLastX = e.touches[0].clientX;
-  } else if (e.touches.length === 2) {
-    orbitDragging = false;
+  if (e.touches.length === 2) {
     const dx = e.touches[0].clientX - e.touches[1].clientX;
     const dy = e.touches[0].clientY - e.touches[1].clientY;
     pinchLastDist = Math.sqrt(dx*dx + dy*dy);
@@ -304,7 +276,6 @@ canvas.addEventListener('touchstart', e => {
 
 window.addEventListener('touchmove', e => {
   if (selectedPiece) return;
-
   if (e.touches.length === 2) {
     // Pinch zoom
     e.preventDefault();
@@ -316,18 +287,11 @@ window.addEventListener('touchmove', e => {
       camZoomDest = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, camZoomDest * scale));
     }
     pinchLastDist = dist;
-    orbitDragging = false;
-  } else if (e.touches.length === 1 && orbitDragging) {
-    // Single finger orbit
-    const dx = e.touches[0].clientX - orbitLastX;
-    camAngleDest += dx * ORBIT_SENSITIVITY;
-    orbitLastX = e.touches[0].clientX;
   }
 }, { passive: false });
 
 window.addEventListener('touchend', e => {
   if (e.touches.length < 2) pinchLastDist = 0;
-  if (e.touches.length === 0) orbitDragging = false;
 });
 
 // Mouse wheel zoom (desktop)
@@ -337,26 +301,51 @@ canvas.addEventListener('wheel', e => {
   camZoomDest = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, camZoomDest * delta));
 }, { passive: false });
 
-// ── HUD orbit hint ────────────────────────────────────────────────
-// Small label showing current angle and drag hint, shown in HUD.
-function orbitHudStr() {
-  const deg = ((camAngle * 180 / Math.PI) % 360 + 360) % 360;
-  return `cam: ${Math.round(deg)}°`;
+// ── TIDE SETTINGS ─────────────────────────────────────────────────
+// d = col+row is the "shore diagonal" isTileWater()/isShore() compare
+// against shoreD. LARGER d = LESS water (low tide — the waterline sits
+// further down-screen, since bigger col+row maps to bigger iso() y at
+// camAngle=0); SMALLER d = MORE water (high tide, waterline climbs higher
+// up-screen). Valid on-grid diagonal range is 0..(GCOLS+GROWS-2) = 30.
+//
+// v0.8.8 (fullscreen beach): SHORE_LOW/SHORE_HIGH_CAP are derived from the
+// target screen-height fractions (75% low tide, 50% high-tide ceiling) via
+// the fitted zoom, then safety-clamped into a sub-range of the valid grid
+// diagonal. The raw conversion alone isn't enough — on portrait viewports
+// (iPad/iPhone) _FIT_ZOOM shrinks to satisfy the width constraint, so the
+// 75%-line's raw d comes out to 48-86 (checked numerically across 6
+// viewports), far past the grid's max of 30. Unclamped, that would put
+// shoreD permanently out of every on-grid tile's reach — isTileWater()
+// would never return true anywhere, silently breaking crab spawning,
+// isShore()/foam, and wave rings on exactly the devices this project
+// targets first. The clamp keeps a guaranteed water-bearing band on-grid
+// at every tide phase, on every aspect ratio.
+function shoreDFromScreenFrac(frac) {
+  return ((SH * frac) - OY) / (TH_BASE * _FIT_ZOOM / 2);
 }
 
-// ── TIDE SETTINGS ─────────────────────────────────────────────────
-const SHORE_LOW  = 22;
+const SHORE_DIAG_MAX = GCOLS + GROWS - 2; // 30 — max possible on-grid col+row
+const SHORE_LOW      = Math.min(shoreDFromScreenFrac(0.75), SHORE_DIAG_MAX - 6); // low tide: ~75% down screen
+const SHORE_HIGH_CAP = Math.min(shoreDFromScreenFrac(0.50), SHORE_LOW - 8); // hard floor — high tide never climbs past the 50% line
+const SHORE_HIGH_MAX = Math.min(shoreDFromScreenFrac(0.65), SHORE_LOW - 2); // softer ceiling — per-cycle variety, still short of the 50% floor
+
+// Shared reference y for the visual-polish pass below (damp-sand band,
+// water depth ramp) — the midpoint tide position, converted to a screen y
+// with the same math as shoreYAtScreenX but without needing col/row (this
+// is only ever used as a fixed anchor, not a live per-column lookup).
+const MEAN_WATERLINE_Y = OY + ((SHORE_LOW + SHORE_HIGH_CAP) / 2) * (TH_BASE * _FIT_ZOOM / 2);
+
 let tidePhase    = 0;
 let tideSpeed    = 0.0035;
-let tidePeak     = 10;
-let shoreD       = 22;
+let tidePeak     = (SHORE_HIGH_CAP + SHORE_HIGH_MAX) / 2;
+let shoreD       = SHORE_LOW;
 let lastTideSign = 1;
 
 function getTideT(){ return (Math.sin(tidePhase)+1)/2; }
 
 function randomizeTideCycle() {
   tideSpeed = 0.002 + Math.random() * 0.005;
-  tidePeak  = 3 + Math.random() * 11;
+  tidePeak  = SHORE_HIGH_CAP + Math.random() * (SHORE_HIGH_MAX - SHORE_HIGH_CAP);
 }
 
 let edgeTime = 0;
@@ -380,9 +369,20 @@ const wCanvas = document.createElement('canvas');
 wCanvas.width = SW; wCanvas.height = SH;
 const wCtx = wCanvas.getContext('2d');
 
+// Depth-gradient endpoints — shallow/turquoise right at the waterline,
+// deepening toward the current dark blue further from shore (down-screen).
+const WATER_SHALLOW = [90, 190, 200];
+const WATER_DEEP     = [20, 70, 130];
+
 function buildWaterTex(t) {
   const imgd = wCtx.createImageData(SW, SH);
+  const rampSpan = SH * 0.35; // ramp fully resolves over 35% of screen height below the waterline
   for (let sy = 0; sy < SH; sy++) {
+    // 0 = right at/above the mean waterline (shallow), 1 = fully deep water
+    const depthT = Math.max(0, Math.min(1, (sy - MEAN_WATERLINE_Y) / rampSpan));
+    const rampR = WATER_SHALLOW[0] + (WATER_DEEP[0]-WATER_SHALLOW[0]) * depthT;
+    const rampG = WATER_SHALLOW[1] + (WATER_DEEP[1]-WATER_SHALLOW[1]) * depthT;
+    const rampB = WATER_SHALLOW[2] + (WATER_DEEP[2]-WATER_SHALLOW[2]) * depthT;
     for (let sx = 0; sx < SW; sx++) {
       const wx = sx / SW, wy = sy / SH;
       const n1 = fbm(wx*6 + t*0.11, wy*6 - t*0.08, 3);
@@ -391,9 +391,10 @@ function buildWaterTex(t) {
       const dx = wx - 0.5, dy = wy - 0.08;
       const bloom = Math.max(0, 1 - Math.sqrt(dx*dx*1.8 + dy*dy*4)*2.0);
       const base = 0.3 + n*0.45 + bloom*0.4;
-      const r = Math.min(255, (15  + base*35  + bloom*55)|0);
-      const g = Math.min(255, (50  + base*65  + bloom*45)|0);
-      const b = Math.min(255, (130 + base*90  + bloom*70)|0);
+      // Depth ramp underneath, existing FBM shimmer + bloom kept on top
+      const r = Math.min(255, (rampR + base*35  + bloom*55)|0);
+      const g = Math.min(255, (rampG + base*65  + bloom*45)|0);
+      const b = Math.min(255, (rampB + base*90  + bloom*70)|0);
       const idx = (sy*SW+sx)*4;
       imgd.data[idx]=r; imgd.data[idx+1]=g; imgd.data[idx+2]=b; imgd.data[idx+3]=255;
     }
@@ -417,6 +418,87 @@ const sCtx2 = sCanvas.getContext('2d');
     imgd.data[idx+3]=255;
   }
   sCtx2.putImageData(imgd,0,0);
+
+  // ── Damp-sand band — a wide, soft darkening just above the mean
+  // waterline (the strip of beach that gets washed by every wave) ──
+  const dampH = SH * 0.14;
+  const dampGrad = sCtx2.createLinearGradient(0, MEAN_WATERLINE_Y - dampH, 0, MEAN_WATERLINE_Y);
+  dampGrad.addColorStop(0, 'rgba(110,80,45,0)');
+  dampGrad.addColorStop(1, 'rgba(110,80,45,0.18)');
+  sCtx2.fillStyle = dampGrad;
+  sCtx2.fillRect(0, MEAN_WATERLINE_Y - dampH, SW, dampH);
+
+  // ── Scattered sand detail — baked once, zero per-frame cost. Density
+  // increases toward the top of the screen (furthest from the water) ──
+  const detailCount = 300 + Math.floor(Math.random() * 300); // 300-600
+  const PEBBLE_COLORS = ['#6b5540', '#7a6248', '#5c5c54', '#847259', '#6e6258'];
+  for (let i = 0; i < detailCount; i++) {
+    const sxp = Math.random() * SW;
+    const syp = SH * Math.pow(Math.random(), 2.2); // biased toward the top
+    const r = 0.5 + Math.random(); // 1-2px speckle
+    sCtx2.fillStyle = PEBBLE_COLORS[(Math.random()*PEBBLE_COLORS.length)|0];
+    sCtx2.globalAlpha = 0.5 + Math.random() * 0.35;
+    sCtx2.beginPath();
+    sCtx2.arc(sxp, syp, r, 0, Math.PI*2);
+    sCtx2.fill();
+  }
+  sCtx2.globalAlpha = 1;
+
+  // Second, larger speckle tier — coarser grit, low alpha so it reads as
+  // texture rather than more foreground debris
+  const largeSpeckleCount = 120 + Math.floor(Math.random() * 100); // 120-220
+  for (let i = 0; i < largeSpeckleCount; i++) {
+    const sxp = Math.random() * SW;
+    const syp = SH * Math.pow(Math.random(), 2.2);
+    const r = 1 + Math.random() * 0.5; // 2-3px
+    sCtx2.fillStyle = PEBBLE_COLORS[(Math.random()*PEBBLE_COLORS.length)|0];
+    sCtx2.globalAlpha = 0.15 + Math.random() * 0.15;
+    sCtx2.beginPath();
+    sCtx2.arc(sxp, syp, r, 0, Math.PI*2);
+    sCtx2.fill();
+  }
+  sCtx2.globalAlpha = 1;
+
+  // Occasional shells — pale ellipse, darker rim
+  const shellCount = 12 + Math.floor(Math.random() * 12); // 12-24
+  for (let i = 0; i < shellCount; i++) {
+    const sxp = Math.random() * SW;
+    const syp = SH * Math.pow(Math.random(), 2.2);
+    const rw  = 1.5 + Math.random(); // ~3-5px wide
+    const rh  = rw * 0.65;
+    sCtx2.save();
+    sCtx2.translate(sxp, syp);
+    sCtx2.rotate(Math.random() * Math.PI);
+    sCtx2.fillStyle = '#ece0c8';
+    sCtx2.beginPath();
+    sCtx2.ellipse(0, 0, rw, rh, 0, 0, Math.PI*2);
+    sCtx2.fill();
+    sCtx2.strokeStyle = '#a89070';
+    sCtx2.lineWidth = 0.6;
+    sCtx2.stroke();
+    sCtx2.restore();
+  }
+
+  // Sparse seaweed tufts — short dark-green strokes, clustered, upper third
+  const tuftCount = 10 + Math.floor(Math.random() * 10); // 10-20 clusters
+  sCtx2.strokeStyle = '#33502c';
+  sCtx2.lineWidth = 1;
+  sCtx2.lineCap = 'round';
+  for (let i = 0; i < tuftCount; i++) {
+    const cx = Math.random() * SW;
+    const cy = Math.random() * (SH / 3); // concentrated in the upper third
+    const strokes = 2 + Math.floor(Math.random() * 3); // 2-4 blades
+    for (let j = 0; j < strokes; j++) {
+      const ang = -Math.PI/2 + (Math.random()-0.5) * 1.2;
+      const len = 3 + Math.random() * 3;
+      sCtx2.globalAlpha = 0.55 + Math.random() * 0.3;
+      sCtx2.beginPath();
+      sCtx2.moveTo(cx, cy);
+      sCtx2.lineTo(cx + Math.cos(ang)*len, cy + Math.sin(ang)*len);
+      sCtx2.stroke();
+    }
+  }
+  sCtx2.globalAlpha = 1;
 })();
 
 function drawTileTop(col, row, fillStyle, alpha) {
@@ -506,17 +588,109 @@ function spawnWave() {
   nextWaveIn = 30 + Math.random() * 120;
 }
 
-function drawSky() {
-  const g = ctx.createLinearGradient(0,0,0,SH*0.38);
-  g.addColorStop(0,'#2e6898');
-  g.addColorStop(1,'#70b0d0');
-  ctx.fillStyle=g; ctx.fillRect(0,0,SW,SH);
-  [[SW*.14,SH*.06,1],[SW*.50,SH*.03,.75],[SW*.80,SH*.09,.6]].forEach(([x,y,s])=>{
-    ctx.save(); ctx.translate(x,y); ctx.scale(s,s); ctx.fillStyle='#daeef8';
-    [[0,7,42,13],[10,-4,30,13],[22,-13,22,13],[38,4,18,12]].forEach(
-      ([rx,ry,rw,rh])=>ctx.fillRect(rx,ry,rw,rh));
-    ctx.restore();
+// ── FULLSCREEN BACKDROP (v0.8.8 — replaces the old sky gradient) ──
+// No sky: the whole canvas is sand, with the ocean clipped in as a
+// screen-space region along the bottom. Both layers reuse sCanvas/wCanvas —
+// the same textures the per-tile loop draws — so the grid blends into this
+// backdrop with no seam.
+//
+// Split in two (visual-tuning pass): drawBackdrop() lays down the base sand
+// before the tile loop runs; drawOceanOverlay() draws the clipped ocean
+// sheet AFTER the tile loop, on top of every tile (water or not). That's
+// what makes the water/sand boundary a smooth screen-space curve instead of
+// stair-stepping along tile diagonals — isTileWater() still decides water
+// per-tile for gameplay (placement, crabs, tourists), it just no longer
+// decides what gets drawn.
+function drawBackdrop() {
+  ctx.drawImage(sCanvas, 0, 0);
+}
+
+function buildShorelinePath() {
+  const STEP = 40;
+  ctx.beginPath();
+  ctx.moveTo(0, shoreYAtScreenX(0));
+  for (let sx = STEP; sx < SW; sx += STEP) {
+    ctx.lineTo(sx, shoreYAtScreenX(sx));
+  }
+  ctx.lineTo(SW, shoreYAtScreenX(SW));
+  ctx.lineTo(SW, SH);
+  ctx.lineTo(0, SH);
+  ctx.closePath();
+}
+
+function drawOceanOverlay() {
+  buildShorelinePath();
+  ctx.save();
+  ctx.clip();
+  ctx.drawImage(wCanvas, 0, 0);
+  ctx.restore();
+}
+
+// For a given screen x, find the y where the shoreline crosses it. With
+// camAngle locked at 0, col-row is constant along a screen column (call it
+// k); solving for the shore diagonal d then just needs a few fixed-point
+// iterations against getShoreOffset (bounded, slow-changing noise), since
+// col/row themselves depend on d. col/row are allowed to go negative or
+// past GCOLS/GROWS here — extending "virtual" tiles beyond the grid is the
+// whole point, so the backdrop doesn't care where the real tile grid sits.
+function shoreYAtScreenX(sx) {
+  const k = (sx - OX) / (TW() / 2); // col - row, constant for this column
+  let d = shoreD;
+  for (let i = 0; i < 4; i++) {
+    const col = (d + k) / 2, row = (d - k) / 2;
+    d = shoreD - getShoreOffset(col, row, edgeTime);
+  }
+  return OY + d * (TH() / 2);
+}
+
+// ── SHORE FOAM BAND — full-screen-width foam along the backdrop
+// shoreline. Extends (does not replace) drawFoamOnTile, which still runs
+// per on-grid wet tile — this just carries the foam line past the grid's
+// edges so it reads as one continuous band, not one that stops at the
+// tile diamond. Path-stroke + a handful of arcs only — no per-pixel work.
+// Bright continuous ribbon, not scattered dots: the strokes carry the
+// shoreline, the blobs are just occasional flecks on top of it.
+const FOAM_LINES = [
+  { alpha: 0.55, width: 5, yOff: 0 },
+  { alpha: 0.7,  width: 3, yOff: 2 },
+  { alpha: 0.85, width: 2, yOff: 4 },
+];
+
+function drawShoreFoamBand(t) {
+  const STEP = 40;
+  const xs = [];
+  for (let sx = 0; sx < SW; sx += STEP) xs.push(sx);
+  xs.push(SW);
+
+  ctx.save();
+  ctx.lineCap = 'round';
+  FOAM_LINES.forEach((line, i) => {
+    ctx.beginPath();
+    xs.forEach((sx, idx) => {
+      const wobble = Math.sin(sx*0.04 + t*0.04 + i*2.3) * 3
+                   + Math.sin(sx*0.11 - t*0.07 + i*5.1) * 1.5;
+      const y = shoreYAtScreenX(sx) + line.yOff + wobble;
+      if (idx === 0) ctx.moveTo(sx, y); else ctx.lineTo(sx, y);
+    });
+    ctx.strokeStyle = `rgba(230,248,255,${line.alpha})`;
+    ctx.lineWidth = line.width;
+    ctx.stroke();
   });
+
+  // Occasional flecks just on the water side, not popcorn: fewer, smaller,
+  // flattened, and hugging the shoreline curve (within ~6px).
+  for (let sx = 0; sx < SW; sx += 65) {
+    const pulse = Math.sin(t*0.07 + sx*1.1) * 0.5 + 0.5;
+    if (pulse < 0.4) continue; // sparse, not every sample point
+    const rx = 2 + pulse * 2;
+    ctx.globalAlpha = 0.5 + pulse * 0.45;
+    ctx.fillStyle = '#d8f2ff';
+    ctx.beginPath();
+    ctx.ellipse(sx, shoreYAtScreenX(sx) + 2 + pulse*4, rx, rx*0.5, 0, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
 }
 
 function drawCastle(t) {
@@ -3072,8 +3246,7 @@ function drawBob(e) {
 
 function render() {
   tick++;
-  // ── Smooth camera angle and zoom toward destinations ───────────
-  camAngle += (camAngleDest - camAngle) * ORBIT_SMOOTH;
+  // ── Smooth zoom toward destination (camera angle is locked at 0) ──
   camZoom  += (camZoomDest  - camZoom)  * ZOOM_SMOOTH;
   tidePhase += tideSpeed;
   edgeTime  += 0.0007;
@@ -3096,7 +3269,7 @@ function render() {
   if(tick%3===0) buildWaterTex(tick*0.011);
 
   ctx.clearRect(0,0,SW,SH);
-  drawSky();
+  drawBackdrop();
 
   // Build all tiles and sort by rotated depth each frame
   const allTiles = [];
@@ -3109,50 +3282,42 @@ function render() {
 
   for(const {col, row} of allTiles){
 
-      if(isTileWater(col,row)){
-        ctx.save();
-        clipTilePath(col,row); ctx.clip();
-        ctx.drawImage(wCanvas,0,0);
-        ctx.restore();
-        ctx.save();
-        clipTilePath(col,row);
-        ctx.strokeStyle='rgba(10,30,60,0.18)'; ctx.lineWidth=0.8;
-        ctx.stroke();
-        ctx.restore();
-      } else {
-        const wet = isShore(col,row);
-        ctx.save();
-        clipTilePath(col,row); ctx.clip();
-        if(wet){
-          ctx.drawImage(sCanvas,0,0);
-          ctx.fillStyle='rgba(40,80,120,0.22)'; ctx.fill();
-        } else {
-          ctx.drawImage(sCanvas,0,0);
-        }
-        ctx.restore();
-
-        waveRings.forEach(ring=>{
-          const dp = iso(ring.col+ring.r*1.4, ring.row+ring.r, 0.02);
-          const rsx = ring.r * TW() * 0.9;
-          const rsy = ring.r * TH() * 0.9;
-          if(rsx<2) return;
-          ctx.save();
-          clipTilePath(col,row); ctx.clip();
-          ctx.globalAlpha = ring.alpha*0.38;
-          ctx.strokeStyle='#a8d8f8'; ctx.lineWidth=2;
-          ctx.beginPath();
-          ctx.ellipse(dp.x, dp.y, rsx, rsy*0.5, -0.5, 0, Math.PI*2);
-          ctx.stroke();
-          ctx.globalAlpha=1;
-          ctx.restore();
-        });
+      // Visual-only: every tile draws as sand now (isTileWater still gates
+      // gameplay below) — drawOceanOverlay() paints the water on top after
+      // this loop, along one continuous screen-space curve instead of a
+      // per-tile stair-step.
+      const wet = isShore(col,row);
+      ctx.save();
+      clipTilePath(col,row); ctx.clip();
+      ctx.drawImage(sCanvas,0,0);
+      if(wet){
+        ctx.fillStyle='rgba(40,80,120,0.22)'; ctx.fill();
       }
+      ctx.restore();
+
+      waveRings.forEach(ring=>{
+        const dp = iso(ring.col+ring.r*1.4, ring.row+ring.r, 0.02);
+        const rsx = ring.r * TW() * 0.9;
+        const rsy = ring.r * TH() * 0.9;
+        if(rsx<2) return;
+        ctx.save();
+        clipTilePath(col,row); ctx.clip();
+        ctx.globalAlpha = ring.alpha*0.38;
+        ctx.strokeStyle='#a8d8f8'; ctx.lineWidth=2;
+        ctx.beginPath();
+        ctx.ellipse(dp.x, dp.y, rsx, rsy*0.5, -0.5, 0, Math.PI*2);
+        ctx.stroke();
+        ctx.globalAlpha=1;
+        ctx.restore();
+      });
 
       if(isShore(col,row)){
         drawFoamOnTile(col,row,tick);
       }
     }  // end allTiles loop
 
+  drawOceanOverlay();      // ← smooth screen-space waterline over every tile
+  drawShoreFoamBand(tick); // full-width foam band along the backdrop shoreline
   drawMoat(tick);
   drawCastle(tick);
   tickDeterioration();  // ← decay placed pieces each frame
@@ -3175,8 +3340,7 @@ function render() {
   }
 
   const tl=getTideT(), dir=Math.cos(tidePhase)>0?'rising':'falling';
-  const orbitHint = selectedPiece ? '' : '  |  drag to orbit';
-  hud.textContent=`tide: ${dir} · ${Math.round(tl*100)}%  |  waves: ${waveRings.length}  |  ${orbitHudStr()}  |  zoom: ${camZoom.toFixed(1)}x${orbitHint}`;
+  hud.textContent=`tide: ${dir} · ${Math.round(tl*100)}%  |  waves: ${waveRings.length}  |  zoom: ${camZoom.toFixed(1)}x`;
 
   // Ghost cursor — selected toolbox piece follows mouse on grid
   drawGhost(tick);
