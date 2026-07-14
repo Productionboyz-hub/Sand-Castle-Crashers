@@ -1,10 +1,10 @@
-<!-- Sand Castle Crashers v0.8.8 — locked camera, fullscreen beach backdrop, retuned tide range -->
+<!-- Sand Castle Crashers v0.8.9 — tide retune, castle damage tuning, countermeasure fix, water-mismatch guard -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sand Castle Crashers v0.8.8</title>
+<title>Sand Castle Crashers v0.8.9</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:#0a0e14; overflow:hidden; width:100vw; height:100vh; height:100dvh; }
@@ -168,7 +168,7 @@ canvas { display:block; }
 const canvas = document.getElementById('c');
 const ctx    = canvas.getContext('2d');
 const hud    = document.getElementById('hud');
-const GAME_VER = 'v0.8.8'; // ← single source of truth, shown in corner badge
+const GAME_VER = 'v0.8.9'; // ← single source of truth, shown in corner badge
 document.getElementById('version-badge').textContent = GAME_VER;
 
 // ── CANVAS SIZE — change 740/520 to resize the game window ──────
@@ -326,8 +326,13 @@ function shoreDFromScreenFrac(frac) {
 
 const SHORE_DIAG_MAX = GCOLS + GROWS - 2; // 30 — max possible on-grid col+row
 const SHORE_LOW      = Math.min(shoreDFromScreenFrac(0.75), SHORE_DIAG_MAX - 6); // low tide: ~75% down screen
-const SHORE_HIGH_CAP = Math.min(shoreDFromScreenFrac(0.50), SHORE_LOW - 8); // hard floor — high tide never climbs past the 50% line
-const SHORE_HIGH_MAX = Math.min(shoreDFromScreenFrac(0.65), SHORE_LOW - 2); // softer ceiling — per-cycle variety, still short of the 50% floor
+// v0.8.9: high-tide reach is now a fixed, castle-relative target instead of
+// a screen-fraction derivation — the castle occupies d≈6-14, so d=16 lets
+// peak tide lap the outer walls/moat ring without ever reaching the keep.
+// A fixed value also can't be thrown off by viewport aspect ratio the way
+// the old `SHORE_LOW-8` derivation could.
+const SHORE_HIGH_CAP = 16; // hard floor — high tide never floods past the castle's outer walls
+const SHORE_HIGH_MAX = Math.min(shoreDFromScreenFrac(0.65), SHORE_LOW - 2); // softer ceiling — per-cycle variety, still short of the castle
 
 // Shared reference y for the visual-polish pass below (damp-sand band,
 // water depth ramp) — the midpoint tide position, converted to a screen y
@@ -336,7 +341,7 @@ const SHORE_HIGH_MAX = Math.min(shoreDFromScreenFrac(0.65), SHORE_LOW - 2); // s
 const MEAN_WATERLINE_Y = OY + ((SHORE_LOW + SHORE_HIGH_CAP) / 2) * (TH_BASE * _FIT_ZOOM / 2);
 
 let tidePhase    = 0;
-let tideSpeed    = 0.0035;
+let tideSpeed    = 0.009; // mid-range of the v0.8.9 speed bump below; re-rolled on the first tide flip
 let tidePeak     = (SHORE_HIGH_CAP + SHORE_HIGH_MAX) / 2;
 let shoreD       = SHORE_LOW;
 let lastTideSign = 1;
@@ -344,7 +349,7 @@ let lastTideSign = 1;
 function getTideT(){ return (Math.sin(tidePhase)+1)/2; }
 
 function randomizeTideCycle() {
-  tideSpeed = 0.002 + Math.random() * 0.005;
+  tideSpeed = 0.006 + Math.random() * 0.008; // v0.8.9: was 0.002-0.007 — waterline visibly moves now
   tidePeak  = SHORE_HIGH_CAP + Math.random() * (SHORE_HIGH_MAX - SHORE_HIGH_CAP);
 }
 
@@ -1334,12 +1339,19 @@ COUNTERS.forEach(counter => {
   btn.appendChild(lbl);
   counterToolboxEl.appendChild(btn);
 
+  // Selection is applied eagerly on mousedown (matches PIECES.forEach's
+  // fix in v0.8.6); click only toggles OFF a counter that was already
+  // selected before this mousedown, using wasSelectedAtMousedown captured
+  // there. Without this split, mousedown sets selectedCounter, then the
+  // immediately-following click sees it "already" set and un-selects it —
+  // the button never stays selected on a real click (v0.8.9 diagnosis).
+  let wasSelectedAtMousedown = false;
   btn.addEventListener('click', () => {
-    const already = selectedCounter === counter.id;
-    selectedCounter = null;
-    selectedPiece = null;
-    document.querySelectorAll('.tool-btn.selected,.counter-btn.selected').forEach(b=>b.classList.remove('selected'));
-    if (!already) { selectedCounter = counter.id; btn.classList.add('selected'); }
+    if (wasSelectedAtMousedown) {
+      selectedCounter = null;
+      selectedPiece = null;
+      btn.classList.remove('selected');
+    }
   });
   btn.addEventListener('touchstart', e => {
     e.preventDefault();
@@ -1349,9 +1361,10 @@ COUNTERS.forEach(counter => {
     btn.classList.add('selected');
   }, { passive: false });
   btn.addEventListener('mousedown', e => {
+    wasSelectedAtMousedown = (selectedCounter === counter.id);
+    document.querySelectorAll('.tool-btn.selected,.counter-btn.selected').forEach(b=>b.classList.remove('selected'));
     selectedCounter = counter.id;
     selectedPiece = null;
-    document.querySelectorAll('.tool-btn.selected,.counter-btn.selected').forEach(b=>b.classList.remove('selected'));
     btn.classList.add('selected');
   });
 });
@@ -2046,7 +2059,18 @@ function drawPieceGhost(id, col, row) {
 // ← TWEAK: starting HP and damage rate
 let castleHP        = 100; // current castle health (0 = game over)
 const CASTLE_MAX_HP = 100;
-const CASTLE_DAMAGE_RATE = 300; // ← ticks per 1 HP loss when enemy reaches castle
+// v0.8.9: CASTLE_DAMAGE_RATE was dead code — nothing read it. Each enemy
+// type (crab/tourist/bob/bird-poop) already gates its OWN calls to
+// damageCastle() via its own _DAMAGE_RATE timer; there was never a second,
+// castle-specific cooldown for this constant to drive. Adding one now would
+// cap total castle damage to a single fixed rate no matter how many
+// enemies are attacking at once — quietly removing the existing "more
+// enemies swarming = castle takes damage faster" scaling. Instead,
+// CASTLE_DAMAGE_RATE now scales how much HP is lost PER hit (against the
+// original 300-tick value as a baseline), so every call site gets
+// proportionally harsher without touching any enemy's own attack timing.
+const CASTLE_DAMAGE_RATE = 120; // ← was 300; lower = more HP lost per hit
+const CASTLE_DAMAGE_PER_HIT = Math.round(300 / CASTLE_DAMAGE_RATE); // 3 at RATE=120
 
 let gameOver = false;
 
@@ -2116,7 +2140,7 @@ function drawWaveButton() {
 // Called by enemy tick when an enemy reaches the castle with no blocker
 function damageCastle() {
   if (gameOver) return;
-  castleHP = Math.max(0, castleHP - 1);
+  castleHP = Math.max(0, castleHP - CASTLE_DAMAGE_PER_HIT);
   if (castleHP <= 0) triggerGameOver();
 }
 
@@ -2556,8 +2580,16 @@ function tickEnemies() {
         }
       }
 
-      // Despawn if walked off grid
-      if (e.col < -1 || e.col > GCOLS+1 || e.row < -1 || e.row > GROWS+1) {
+      // Despawn if walked off grid, OR if visually standing in the ocean.
+      // isTileWater()'s per-tile math can say "dry" past the grid's edges
+      // while the continuous on-screen shoreline curve (drawOceanOverlay,
+      // shoreYAtScreenX) disagrees — the visual ocean is full-width, but
+      // gameplay water only exists on-grid, so a tourist who wanders off
+      // the right/left edge can end up walking on visible ocean before the
+      // plain off-grid bound catches it.
+      const tSp = iso(e.col, e.row, 0);
+      if (e.col < -1 || e.col > GCOLS+1 || e.row < -1 || e.row > GROWS+1 ||
+          tSp.y > shoreYAtScreenX(tSp.x)) {
         enemies.splice(i, 1);
       }
     }
@@ -2955,7 +2987,8 @@ function tickBob(e, i) {
     e.col += (dc/dist) * e.speed * 3;
     e.row += (dr/dist) * e.speed * 3;
     if (e.scaredTimer >= ENEMY_SCARED_DURATION ||
-        e.col < -1 || e.col > GCOLS+1) {
+        e.col < -1 || e.col > GCOLS+1 ||
+        iso(e.col, e.row, 0).y > shoreYAtScreenX(iso(e.col, e.row, 0).x)) {
       enemies.splice(i, 1);
     }
     return;
@@ -2965,7 +2998,8 @@ function tickBob(e, i) {
   if (e.state === 'leaving') {
     e.col += Math.cos(e.leavingAngle) * e.speed * 2;
     e.row += Math.sin(e.leavingAngle) * e.speed * 2;
-    if (e.col < -1 || e.col > GCOLS+1 || e.row < -1 || e.row > GROWS+1) {
+    if (e.col < -1 || e.col > GCOLS+1 || e.row < -1 || e.row > GROWS+1 ||
+        iso(e.col, e.row, 0).y > shoreYAtScreenX(iso(e.col, e.row, 0).x)) {
       enemies.splice(i, 1);
     }
     return;
@@ -3019,6 +3053,14 @@ function tickBob(e, i) {
     e.row += Math.sin(e.wanderAngle) * e.speed;
   } else {
     e.wanderAngle += Math.PI * 0.5; // turn away from water
+  }
+
+  // Extra guard: isTileWater()'s per-tile math can disagree with the
+  // continuous on-screen shoreline curve (same mismatch as tourists) — if
+  // Bob is visually standing in the ocean regardless, turn him back.
+  const bobSp = iso(e.col, e.row, 0);
+  if (bobSp.y > shoreYAtScreenX(bobSp.x)) {
+    e.wanderAngle += Math.PI;
   }
 
   // Check for nearest piece — Bob beeps and damages it
@@ -3256,7 +3298,7 @@ function render() {
   lastTideSign = curSign;
 
   const targetD = tidePeak + getTideT() * (SHORE_LOW - tidePeak);
-  shoreD += (targetD - shoreD) * 0.004;
+  shoreD += (targetD - shoreD) * 0.012; // v0.8.9: was 0.004 — waterline eases in visibly, not glacially
 
   waveTimer++;
   if (waveTimer >= nextWaveIn) { spawnWave(); waveTimer = 0; }
