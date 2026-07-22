@@ -331,8 +331,19 @@ const SHORE_LOW      = Math.min(shoreDFromScreenFrac(0.75), SHORE_DIAG_MAX - 6);
 // peak tide lap the outer walls/moat ring without ever reaching the keep.
 // A fixed value also can't be thrown off by viewport aspect ratio the way
 // the old `SHORE_LOW-8` derivation could.
-const SHORE_HIGH_CAP = 16; // hard floor — high tide never floods past the castle's outer walls
-const SHORE_HIGH_MAX = Math.min(shoreDFromScreenFrac(0.65), SHORE_LOW - 2); // softer ceiling — per-cycle variety, still short of the castle
+// v0.8.9 fix pass: SHORE_HIGH_CAP=16 was a correct hard floor, but
+// randomizeTideCycle drew tidePeak uniformly from [16, ~22] — the average
+// cycle rolled ~19, nowhere near the wall, and only the luckiest draws got
+// close to 16. Simulating the real shoreD-easing dynamics (which lag
+// tidePeak by 0.4-1.9 units depending on tideSpeed — shoreD asymptotically
+// approaches but never quite reaches the target within one cycle) showed
+// CAP=15/MAX=19 lands actual per-cycle peaks around 15.5-19.9 instead of
+// 16.4-22.4 — most cycles now visibly reach the walls, not just the
+// occasional lucky one. Both are now fixed, castle-relative values (not
+// screen-fraction-derived) for the same reason as before: aspect ratio
+// shouldn't be able to move a target that's about castle geometry.
+const SHORE_HIGH_CAP = 15; // hard floor — high tide never floods past the castle's outer walls
+const SHORE_HIGH_MAX = 19; // softer ceiling — per-cycle variety, still reaches close enough to read as "the tide came in"
 
 // Shared reference y for the visual-polish pass below (damp-sand band,
 // water depth ramp) — the midpoint tide position, converted to a screen y
@@ -1511,6 +1522,21 @@ function tickTruck() {
   if (truckCooldown > 0) truckCooldown--;
   if (!truck) return;
   truck.col += truck.dirC * 0.02;
+
+  // Shoreline guard — the truck drives a fixed row, but the tide moves the
+  // shoreline under it; if its current position reads as visually wet,
+  // steer the row back toward dry sand, or despawn outright if it's
+  // already at the grid edge (steering further wouldn't help there).
+  const truckSp = iso(truck.col, truck.row, 0);
+  if (truckSp.y > shoreYAtScreenX(truckSp.x)) {
+    if (truck.col <= 0 || truck.col >= GCOLS) {
+      truck = null;
+      truckCooldown = 900;
+      return;
+    }
+    truck.row = Math.max(-2, truck.row - 0.05); // smaller row = more inland/drier
+  }
+
   for (let i = poopSplats.length - 1; i >= 0; i--) {
     const p = poopSplats[i];
     const pDist = Math.sqrt((p.col - truck.col) ** 2 + (p.row - truck.row) ** 2);
@@ -3019,19 +3045,27 @@ function tickBob(e, i) {
       lure.timer++;
       if (lure.timer >= 300) {
         lures.splice(lures.indexOf(lure), 1);
-        const distLeft = e.col, distRight = GCOLS - e.col;
-        const distTop = e.row, distBottom = GROWS - e.row;
-        const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+        // Nearest LAND edge only (top/left/right) — never bottom, since
+        // increasing row heads toward the water, not off the grid onto sand.
+        const distLeft = e.col, distRight = GCOLS - e.col, distTop = e.row;
+        const minDist = Math.min(distLeft, distRight, distTop);
         e.leavingAngle =
           minDist === distLeft  ? Math.PI :
-          minDist === distRight ? 0 :
-          minDist === distTop   ? -Math.PI / 2 : Math.PI / 2;
+          minDist === distRight ? 0 : -Math.PI / 2;
         e.state = 'leaving';
       }
     } else {
       e.beeping = false;
-      e.col += (lc / lDist) * e.speed * 3;
-      e.row += (lr / lDist) * e.speed * 3;
+      // Check the NEXT position before committing — beelining at 3x speed
+      // can cross into visually-wet ground in one step if the lure sits
+      // near the waterline.
+      const nextCol = e.col + (lc / lDist) * e.speed * 3;
+      const nextRow = e.row + (lr / lDist) * e.speed * 3;
+      const nextSp = iso(nextCol, nextRow, 0);
+      if (nextSp.y <= shoreYAtScreenX(nextSp.x)) {
+        e.col = nextCol;
+        e.row = nextRow;
+      }
     }
     return;
   }
@@ -3045,22 +3079,21 @@ function tickBob(e, i) {
     e.wanderTimer = 0;
   }
 
-  // Water avoidance
+  // Water avoidance — checked against the NEXT position, before committing
+  // the move, so Bob never actually steps into the water first and only
+  // turns back after the fact. Combines the on-grid tile check with the
+  // continuous on-screen shoreline curve (isTileWater()'s per-tile math can
+  // disagree with it, same mismatch as tourists/the truck).
   const nextC = e.col + Math.cos(e.wanderAngle) * e.speed * 4;
   const nextR = e.row + Math.sin(e.wanderAngle) * e.speed * 4;
-  if (!isTileWater(Math.round(nextC), Math.round(nextR))) {
+  const nextSp = iso(nextC, nextR, 0);
+  const nextIsWet = isTileWater(Math.round(nextC), Math.round(nextR)) ||
+                    nextSp.y > shoreYAtScreenX(nextSp.x);
+  if (!nextIsWet) {
     e.col += Math.cos(e.wanderAngle) * e.speed;
     e.row += Math.sin(e.wanderAngle) * e.speed;
   } else {
     e.wanderAngle += Math.PI * 0.5; // turn away from water
-  }
-
-  // Extra guard: isTileWater()'s per-tile math can disagree with the
-  // continuous on-screen shoreline curve (same mismatch as tourists) — if
-  // Bob is visually standing in the ocean regardless, turn him back.
-  const bobSp = iso(e.col, e.row, 0);
-  if (bobSp.y > shoreYAtScreenX(bobSp.x)) {
-    e.wanderAngle += Math.PI;
   }
 
   // Check for nearest piece — Bob beeps and damages it

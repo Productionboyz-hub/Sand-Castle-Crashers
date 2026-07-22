@@ -228,6 +228,13 @@ portrait would need reworking `_FIT_ZOOM`/`OY` to fit by height on tall
 aspect ratios instead of width — not done yet, flagged for a future
 session.
 
+**v0.8.9** = tide reach/speed retune, castle damage upped to 3 HP/hit, the
+`COUNTERS.forEach` mousedown/click toggle-conflict fix ported over from
+v0.8.6 (`PIECES.forEach` had it, counters didn't — that's why hole/metal/
+cleaner looked selected but did nothing on tap), and a shoreline-curve
+despawn/turn-back guard for tourists and Bob (on-grid `isTileWater()` math
+could disagree with the continuous visual shoreline off-grid).
+
 ## Build plan (current sequence)
 
 One verified change per prompt, diagnose-before-fix discipline:
