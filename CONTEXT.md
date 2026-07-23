@@ -22,7 +22,10 @@ https://github.com/Productionboyz-hub/Sand-Castle-Crashers
 
 ## Live URL
 https://sand-castle-crashers.athleticsouthla.workers.dev
-This is the ONLY live URL. GitHub Pages is disabled deliberately.
+This is the ONLY live URL. GitHub Pages is deliberately disabled - it was
+found LIVE on 2026-07-23 serving repo root, and disabled at source
+(branch -> None). Unpublishing alone does not prevent rebuild. Re-verify
+it 404s after any push that could rearm it.
 
 ## Hosting & deploy
 Cloudflare Worker (`sand_castle_worker.js`) serving static assets from

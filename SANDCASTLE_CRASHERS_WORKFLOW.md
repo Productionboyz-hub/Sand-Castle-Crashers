@@ -204,6 +204,7 @@ Each of these is a real soccer-app defect, generalized:
 | Spinner tied to an inner await | Feedback ends when the operation ends (§8) |
 | Approval rider sent separately from the diff | Riders travel with the diff (§4) |
 | Balance change requires a code deploy | Balance is data (§8) |
+| Pattern scan treated as credential proof | Inspect known-sensitive files directly; a grep pattern is a filter, not a proof (found: account ID stored under key "id" passed a scan for "account_id") (§5) |
 
 ---
 
