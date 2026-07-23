@@ -34,7 +34,7 @@ $sha = git rev-parse --short HEAD
 Write-Host "Building $sha ..." -ForegroundColor Cyan
 
 # BUILD — stamp during copy; source keeps the placeholder
-$src = Get-Content "$root\sandcastle_iso2.html" -Raw
+$src = Get-Content "$root\sandcastle_iso2.html" -Raw -Encoding UTF8
 if ($src -notmatch '__BUILD_SHA__') {
     Write-Host "ABORT: no __BUILD_SHA__ placeholder in source." -ForegroundColor Red
     exit 1
@@ -46,7 +46,7 @@ if ($hits -ne 2) {
     exit 1
 }
 $out = $out -replace "`r`n", "`n"
-[System.IO.File]::WriteAllText("$root\public\index.html", $out)
+[System.IO.File]::WriteAllText("$root\public\index.html", $out, (New-Object System.Text.UTF8Encoding $false))
 
 # DEPLOY
 Write-Host "Deploying..." -ForegroundColor Cyan
@@ -59,9 +59,8 @@ if ($LASTEXITCODE -ne 0) {
 # RECEIPT — read the served artifact back
 Write-Host "Verifying served body..." -ForegroundColor Cyan
 Start-Sleep -Seconds 3
-$cb    = [DateTimeOffset]::Now.ToUnixTimeSeconds()
-$url   = "https://sand-castle-crashers.athleticsouthla.workers.dev/?cb=$cb"
-$r     = Invoke-WebRequest $url -Headers @{"Cache-Control"="no-cache"} -UseBasicParsing
+$url   = "https://sand-castle-crashers.athleticsouthla.workers.dev/"
+$r     = Invoke-WebRequest $url -Headers @{"Cache-Control"="no-cache"; "Pragma"="no-cache"} -UseBasicParsing
 $cache = $r.Headers['cf-cache-status']
 $found = [regex]::Matches($r.Content, 'build ([a-f0-9]{7})') | ForEach-Object { $_.Groups[1].Value }
 
