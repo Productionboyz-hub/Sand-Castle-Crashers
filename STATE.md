@@ -5,7 +5,7 @@ Live: v0.8.10 (commit 7e8f335), body receipt verified: YES (carried from
 2026-07-22; no deploy this session)
 Golden: v0.8.10 (tag v0.8.10-golden)   Rollback: v0.8.9 (commit 5b5373b)
 Last device pass: 2026-07-22, Android phone, GREEN
-Backlog changes: opened #12-#14; #8 unblocked; #1 still open
+Backlog changes: opened #12-#14; #12 verified; #8 unblocked; #1 still open
 NEXT ACTION: Relocate repo out of OneDrive (#14). Ships alone per
 WORKFLOW sec.9. Path inventory by grep first, then diff, then a full
 deploy loop including receipt.
@@ -130,8 +130,8 @@ Known-good before this session: 5b5373b.
     would have been meaningless. CONTEXT.md asserted Pages was disabled;
     it was not.
     Fix: branch source set to None (full disarm, not unpublish).
-    Status: fixed-unverified - needs a 404 re-check AFTER a push, since
-    only a push can prove the rebuild trigger is really off.
+    Status: verified 2026-07-23 - 404 confirmed after push d06cb92, which
+    was the rearm opportunity.
 
 #13 [LOW] Cloudflare account ID + author email in public repo history
     .wrangler/cache/wrangler-account.json in 25 pre-hygiene commits,
