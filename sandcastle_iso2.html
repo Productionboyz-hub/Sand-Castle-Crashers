@@ -1,4 +1,4 @@
-<!-- Sand Castle Crashers v0.8.9 — tide retune, castle damage tuning, countermeasure fix, water-mismatch guard -->
+<!-- Sand Castle Crashers — build __BUILD_SHA__ -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -168,8 +168,9 @@ canvas { display:block; }
 const canvas = document.getElementById('c');
 const ctx    = canvas.getContext('2d');
 const hud    = document.getElementById('hud');
-const GAME_VER = 'v0.8.9'; // ← single source of truth, shown in corner badge
-document.getElementById('version-badge').textContent = GAME_VER;
+const GAME_VER    = 'v0.8.10';             // human label only — NOT a receipt
+const BUILD_STAMP = 'build __BUILD_SHA__'; // injected at build — never edit by hand
+document.getElementById('version-badge').textContent = GAME_VER + ' · ' + BUILD_STAMP;
 
 // ── CANVAS SIZE — change 740/520 to resize the game window ──────
 const SW = window.innerWidth;
