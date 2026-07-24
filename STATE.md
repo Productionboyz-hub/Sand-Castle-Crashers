@@ -159,6 +159,17 @@ Known-good before this session: 5b5373b.
     dehydration, does NOT stop conflict copies.
     Status: open - ships alone, own device pass.
 
+#15 [LOW] Two soccer-app JSON files sat in repo root
+    asl_backup_v4.json (173 KB) and asl_settings_v4.json, both dated
+    2026-07-15. Untracked, ignored by /*.json, never in git history on
+    any ref. Noticed 2026-07-23 during the robocopy listing, not created
+    then. Origin unknown and not worth further archaeology: Chrome
+    download settings verified clean, no recent soccer-app write
+    activity, no evidence of an ongoing cause.
+    Fix: moved to _scc_scratch 2026-07-23. Do not delete - possibly the
+    only copy.
+    Status: verified
+
 ## Deviations from WORKFLOW, accepted
 - sec.3 src/dist split not done. Project is a working single-file monolith at
   v0.8.10, not day one. Large blast radius; ships alone when scheduled.
