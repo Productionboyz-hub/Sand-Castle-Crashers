@@ -9,9 +9,10 @@ Repo relocated: C:\Users\admin\OneDrive\Sand Caslte Crashers ->
 Last device pass: 2026-07-22, Android phone, GREEN (unchanged - no game code
   touched this session; move was infrastructure only).
 Backlog changes: closed #14 (repo move). #15 already verified.
-NEXT ACTION: From the NEW path only - retire the old OneDrive folder (rename
-or delete once trusted), remove old entries from VS Code Recent, then resume
-game work (#2 water-definition unification is the top gameplay item).
+NEXT ACTION: Deploy 85c62b4, verify receipt. Flip FORCE_HIGH_TIDE=true,
+commit/push/deploy/verify, run full device pass against that receipted
+build. Revert toggle, redeploy, reverify, then watch a natural tide cycle
+for #3. Then promote golden.
 ## STATE - 2026-07-23
 Live: v0.8.10 (commit 7e8f335), body receipt verified: YES (carried from
 2026-07-22; no deploy this session)
@@ -94,22 +95,33 @@ Known-good before this session: 5b5373b.
     disagree. Bob uses a merged `nextIsWet` test; the cleaner truck uses a
     screen-space test with despawn+cooldown. A third entity will get a third
     answer.
-    Root cause: (blank until diagnosed)
-    Status: open - candidate fix is one exported primitive every entity and
-    the tide itself calls.
+    Root cause: two divergent evaluations of the same shore-boundary
+    formula - isTileWater() exact-evaluated on rounded grid coords vs.
+    shoreYAtScreenX() iteratively solved via an iso()-then-back round-trip.
+    Status: FIX APPLIED (efba0f1), ZERO device coverage. Never deployed.
+    The 2026-07-24 pass ran against pre-fix code (live build 606c0c5).
+    Full pass required after deploying efba0f1: truck, Bob, crab avoidance,
+    plus the tourist off-grid despawn hunk (the only behaviour-changing
+    hunk, still uncovered - tourists didn't spawn).
 
 #3  [SEV?] Tide does not visually reach the castle at peak
     Repro: (needs exact steps)
     Root cause: (blank) - suspected #2
-    Status: open
+    Status: open, untested. Requires natural tide cycle on a deployed
+    build.
 
 #4  [SEV?] Cleaner truck drives into the ocean
     Guard shipped in 7e8f335, unverified on device.
-    Status: fixed-unverified
+    Status: VERIFIED 2026-07-24 on live build 606c0c5 (game code 7e8f335).
+    Truck drove along the tide's edge, never entered water. Verifies the
+    7e8f335 guard, NOT the efba0f1 refactor.
 
 #5  [SEV?] Bob enters the ocean
     Refactor shipped in 7e8f335, unverified on device.
-    Status: fixed-unverified
+    Status: VERIFIED 2026-07-24 on live build 606c0c5 (game code 7e8f335).
+    Bob beelined to lure, stopped, despawned (lure single-use = expected),
+    never entered water. Verifies the 7e8f335 merged nextIsWet test, NOT
+    efba0f1.
 
 #6  [LOW] Version badge overlaps tide HUD text
     Badge grew when the build stamp was added.
