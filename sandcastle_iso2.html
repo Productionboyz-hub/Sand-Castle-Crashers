@@ -358,6 +358,12 @@ let tidePeak     = (SHORE_HIGH_CAP + SHORE_HIGH_MAX) / 2;
 let shoreD       = SHORE_LOW;
 let lastTideSign = 1;
 
+// TEMP DEVICE-PASS AID (backlog #2 verification, unseeded RNG #9 means high
+// tide isn't reliably reachable on demand) — when true, render() pins the
+// tide target to SHORE_HIGH_MAX every frame instead of cycling. Flip back to
+// false and redeploy once the #2 device pass is done; do not leave this on.
+const FORCE_HIGH_TIDE = false;
+
 function getTideT(){ return (Math.sin(tidePhase)+1)/2; }
 
 function randomizeTideCycle() {
@@ -3331,7 +3337,7 @@ function render() {
   if (curSign === 1 && lastTideSign === -1) randomizeTideCycle();
   lastTideSign = curSign;
 
-  const targetD = tidePeak + getTideT() * (SHORE_LOW - tidePeak);
+  const targetD = FORCE_HIGH_TIDE ? SHORE_HIGH_MAX : tidePeak + getTideT() * (SHORE_LOW - tidePeak);
   shoreD += (targetD - shoreD) * 0.012; // v0.8.9: was 0.004 — waterline eases in visibly, not glacially
 
   waveTimer++;
