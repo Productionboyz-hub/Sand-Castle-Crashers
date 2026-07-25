@@ -1,5 +1,17 @@
 # STATE
 
+## STATE - 2026-07-24
+Live: v0.8.10 (commit 7e8f335 game build), deploy receipt re-verified from
+NEW repo path: YES (two stamps, both 606c0c5 - the docs-only HEAD).
+Golden: v0.8.10 (tag v0.8.10-golden)   Rollback: v0.8.9 (commit 5b5373b)
+Repo relocated: C:\Users\admin\OneDrive\Sand Caslte Crashers ->
+  C:\Users\admin\Sand-Castle-Crashers. Proven working, deploys clean.
+Last device pass: 2026-07-22, Android phone, GREEN (unchanged - no game code
+  touched this session; move was infrastructure only).
+Backlog changes: closed #14 (repo move). #15 already verified.
+NEXT ACTION: From the NEW path only - retire the old OneDrive folder (rename
+or delete once trusted), remove old entries from VS Code Recent, then resume
+game work (#2 water-definition unification is the top gameplay item).
 ## STATE - 2026-07-23
 Live: v0.8.10 (commit 7e8f335), body receipt verified: YES (carried from
 2026-07-22; no deploy this session)
@@ -11,7 +23,14 @@ WORKFLOW sec.9. Path inventory by grep first, then diff, then a full
 deploy loop including receipt.
 
 ## STATE - 2026-07-22
-Live: v0.8.10 (commit 7e8f335), body receipt verified: YES (two stamps, both 7e8f335)
+Status: DONE 2026-07-24. Copied to C:\Users\admin\Sand-Castle-Crashers
+    via robocopy (162 files, 0 failed), git fsck clean, tip 606c0c5 on main.
+    Deploy proven from new path: receipt verified, two 606c0c5 stamps live.
+    VS Code re-pointed to new folder. Old OneDrive copy NOT renamed - OneDrive
+    held a lock; left in place as warm fallback, retire next session.
+    KNOWN TRAP: soccer-app repo also on this machine; VS Code terminal opens
+    there by default. First command every session: cd to the new path, confirm
+    606c0c5/main before anything else.
 Golden: v0.8.10 (tag v0.8.10-golden)   Rollback: v0.8.9 (commit 5b5373b)
 Last device pass: 2026-07-22, Android phone, GREEN
   Steps run: badge reads v0.8.10 . build 7e8f335 with correct middle dot;
