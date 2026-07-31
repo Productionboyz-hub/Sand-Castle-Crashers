@@ -13,6 +13,14 @@ castle on a beach grid and defends it against beachgoers and the tide.
 4. Readable at a glance on a phone held in portrait.
 
 ## Art direction
+Scope of the reference (DECIDED): Sand Castle Crashers is a defense
+game. The Sandcastle (Bubblebird Studio) reference governs art
+direction only - palette, lighting, tide and surf polish, decor,
+washed-ashore collectibles. It does not govern design intent. Waves,
+piece decay, enemies, castle HP and the loss condition all stay.
+Where the reference's calm-sandbox feel conflicts with combat
+readability, readability wins - see the contrast budget below.
+
 Reference target: soft, sun-bleached, low-saturation tropical beach.
 Saturation is spent almost entirely on water; sand and castle stay
 pale and warm.
