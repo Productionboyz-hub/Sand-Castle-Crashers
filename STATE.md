@@ -201,6 +201,22 @@ Known-good before this session: 5b5373b.
     only copy.
     Status: verified
 
+#16 [MED] Placement ghost teal collided with WATER_SHALLOW
+    The valid-placement ghost fill/stroke used teal
+    rgba(100,220,200,0.18) / #7ae8d8. WATER_SHALLOW is [90,190,200]
+    (~#5abec8) - near-identical. Valid tiles and shallow water read
+    as the same color, against pillar 4 and the contrast budget.
+    The floating drag-badge border used the same teal.
+    Repro: drag a piece near the waterline; ghost and water are hard
+    to separate at a glance in portrait.
+    Root cause: highlight color chosen from inside the environment
+    palette instead of outside it.
+    Fix: both sites changed to lime rgba(212,232,90,0.20) / #dceb5c.
+    Committed 11e12a0 on branch fix/lime-ghost-highlight. NOT merged,
+    NOT deployed - held out of the in-flight device pass sequence so
+    a red result stays bisectable.
+    Status: fixed-unverified
+
 ## Deviations from WORKFLOW, accepted
 - sec.3 src/dist split not done. Project is a working single-file monolith at
   v0.8.10, not day one. Large blast radius; ships alone when scheduled.
