@@ -1972,19 +1972,20 @@ function drawGhost(t) {
     const pb = iso(ghostCol+1, ghostRow+1, 0);
     const pf = iso(ghostCol,   ghostRow+1, 0);
 
-    // Teal = valid placement, red = water (invalid for building)
+    // Lime = valid placement (kept outside the water/sand palette so it never
+    // reads as shallow water — see backlog #16), red = water (invalid for building)
     // Eraser ignores water state — can erase any placed piece anywhere
     const eraserHasPiece = selectedPiece === 'eraser' &&
       placedPieces.find(p => p.col === ghostCol && p.row === ghostRow);
 
     ctx.fillStyle = (onWater && selectedPiece !== 'eraser') ? 'rgba(220,60,60,0.22)' :
-                    eraserHasPiece ? 'rgba(255,40,60,0.25)' : 'rgba(100,220,200,0.18)';
+                    eraserHasPiece ? 'rgba(255,40,60,0.25)' : 'rgba(212,232,90,0.20)';
     ctx.beginPath();
     ctx.moveTo(p.x,p.y); ctx.lineTo(pr.x,pr.y); ctx.lineTo(pb.x,pb.y); ctx.lineTo(pf.x,pf.y);
     ctx.closePath(); ctx.fill();
 
     ctx.strokeStyle = (onWater && selectedPiece !== 'eraser') ? '#e06868' :
-                      eraserHasPiece ? '#ff4060' : '#7ae8d8';
+                      eraserHasPiece ? '#ff4060' : '#dceb5c';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(p.x,p.y); ctx.lineTo(pr.x,pr.y); ctx.lineTo(pb.x,pb.y); ctx.lineTo(pf.x,pf.y);
@@ -2023,7 +2024,7 @@ function drawGhost(t) {
     ctx.beginPath();
     ctx.roundRect(fx, fy, fw, fh, 6);
     ctx.fill();
-    ctx.strokeStyle = '#7ae8d8';
+    ctx.strokeStyle = '#dceb5c';
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
