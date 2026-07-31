@@ -12,6 +12,43 @@ castle on a beach grid and defends it against beachgoers and the tide.
    enemies rather than attacking them.
 4. Readable at a glance on a phone held in portrait.
 
+## Art direction
+Reference target: soft, sun-bleached, low-saturation tropical beach.
+Saturation is spent almost entirely on water; sand and castle stay
+pale and warm.
+
+Lighting (locked - every sprite and every draw call obeys this):
+- Sun from upper LEFT, warm. Shadows fall on RIGHT faces.
+- Shadowed faces take a faint cool blue tint (sky bounce), not just a
+  darker version of the lit color.
+- Every piece and entity gets a soft blurred elliptical contact
+  shadow, warm grey-brown at ~20% alpha. Never black.
+- No hard outlines. Soft, rounded edges.
+
+Palette:
+  Dry beach sand   #EDDFC4  sun-lit #F7ECD8  shadowed #CBB795
+  Wet sand band    #C2A47E  deepest (foam edge) #A6875F
+  Castle piece     lit #EFE0C4  top #E2CFAC  shadow #C2A87F
+                   crevice #A98D66
+  Water            shallow #7FD4C8  mid #35A8A8  deep #1C6E7E
+  Foam             #FFFFFF at 70-85% alpha, breaking edge #EAF7F4
+  Contact shadow   #8A7355 at ~20% alpha
+  Decor accents    driftwood #A98763  seaweed #4F7A55
+                   shell #F5E6DE  pebble #9AA3A0
+
+Castle sand sits slightly cooler and darker than dry beach sand, or
+the castle loses separation from the ground.
+
+Contrast budget: the environment stays soft and low-contrast. All
+contrast is reserved for interactive and threatening elements -
+enemies, damaged pieces, placement feedback - so pillar 4 (readable
+at a glance in portrait) survives the softer palette.
+
+Sprite generation: pieces are generated externally as isolated PNGs
+with transparent backgrounds, 2:1 dimetric, matching the lighting
+rules above. No ground, no base, no cast shadow baked in - contact
+shadows are drawn at runtime.
+
 ## Stack
 Vanilla JavaScript (ES6+), HTML5 Canvas 2D. No framework, no bundler.
 Source: `sandcastle_iso2.html` (single file).
