@@ -101,7 +101,7 @@ canvas { display:block; }
 .tool-btn.selected {
   border-color: #7ab8cc;
   background: rgba(100,180,220,0.15);
-  box-shadow: 0 0 8px rgba(100,180,220,0.2);
+  box-shadow: 0 0 10px rgba(100,180,220,0.35);
 }
 .tool-btn canvas {
   position: absolute;
@@ -264,19 +264,33 @@ function iso(col, row, z) {
 }
 
 // ── Pinch-to-zoom (touch) — orbit gesture removed, zoom kept ──────
+// Two fingers is always a pinch, regardless of what's selected — a second
+// finger landing mid-drag hands the gesture to zoom, not placement.
 let pinchLastDist = 0;
 
 canvas.addEventListener('touchstart', e => {
-  if (selectedPiece || selectedCounter) return;
+  if (e.touches.length === 1) {
+    // A fresh single-finger touch always starts a brand new gesture — a
+    // stranded pinch-cancellation flag can never outlive it, regardless of
+    // whether a piece happens to be selected.
+    touchDragCancelledByPinch = false;
+  }
   if (e.touches.length === 2) {
     const dx = e.touches[0].clientX - e.touches[1].clientX;
     const dy = e.touches[0].clientY - e.touches[1].clientY;
     pinchLastDist = Math.sqrt(dx*dx + dy*dy);
+    return;
+  }
+  if (selectedPiece && e.touches.length === 1) {
+    // Anchor the drag threshold here too, so repeat placement (sticky
+    // selection) gets its own anchor instead of measuring from a stale
+    // toolbox-button touch.
+    dragStartX = e.touches[0].clientX;
+    dragStartY = e.touches[0].clientY;
   }
 }, { passive: true });
 
 window.addEventListener('touchmove', e => {
-  if (selectedPiece) return;
   if (e.touches.length === 2) {
     // Pinch zoom
     e.preventDefault();
@@ -1150,14 +1164,25 @@ PIECES.forEach(piece => {
     }
   });
 
-  // ── Touch: tap to select; drag sets isDragging via touchmove ───
+  // ── Touch: tap to select; tap the armed button again to deselect;
+  // drag sets isDragging via touchmove once past DRAG_THRESHOLD_PX ───
   btn.addEventListener('touchstart', e => {
     e.preventDefault(); // stop scroll
+    if (selectedPiece === piece.id) {
+      // Re-tapping the already-armed button clears it — touch has no
+      // Escape key, so this is the only touch-native deselect affordance.
+      selectedPiece = null;
+      btn.classList.remove('selected');
+      return;
+    }
     document.querySelectorAll('.tool-btn.selected,.counter-btn.selected').forEach(b=>b.classList.remove('selected'));
     selectedPiece = piece.id;
     selectedCounter = null;
     btn.classList.add('selected');
-    // isDragging NOT set here — touchmove sets it so tap-to-select works cleanly
+    dragStartX = e.touches[0].clientX;
+    dragStartY = e.touches[0].clientY;
+    touchDragCancelledByPinch = false;
+    // isDragging NOT set here — touchmove sets it once past threshold
   }, { passive: false });
 
   // ── Mouse: mousedown selects + arms a possible drag ────────────
@@ -1607,7 +1632,9 @@ function drawTruck() {
 let isDragging  = false;
 let ghostCol    = -1, ghostRow = -1;
 let dragFloatX  = -1, dragFloatY = -1;
-let dragStartX  = -1, dragStartY = -1; // mousedown anchor point — drag-threshold detection
+let dragStartX  = -1, dragStartY = -1; // press/touch anchor point — drag-threshold detection
+const DRAG_THRESHOLD_PX = 5; // movement past this, from the anchor, counts as a drag (mouse + touch)
+let touchDragCancelledByPinch = false; // a second finger hijacked this gesture — touchend must not place
 
 // Convert screen px → iso grid col/row
 function screenToGrid(sx, sy) {
@@ -1631,7 +1658,7 @@ window.addEventListener('mousemove', e => {
   if (!selectedPiece) return;
   if (!isDragging && dragStartX >= 0) {
     const moved = Math.hypot(e.clientX - dragStartX, e.clientY - dragStartY);
-    if (moved > 5) isDragging = true; // drag threshold crossed
+    if (moved > DRAG_THRESHOLD_PX) isDragging = true; // drag threshold crossed
   }
   dragFloatX = sx; dragFloatY = sy;
 });
@@ -1646,9 +1673,21 @@ window.addEventListener('mouseup', e => {
 // ── TOUCH drag tracking ───────────────────────────────────────────
 window.addEventListener('touchmove', e => {
   if (!selectedPiece) return;
+  if (e.touches.length >= 2) {
+    // A second finger landed mid-drag — pinch owns the gesture now.
+    // Cancel the drag instead of placing; don't preventDefault, so the
+    // pinch handler above is free to zoom.
+    isDragging = false;
+    dragFloatX = -1; dragFloatY = -1;
+    touchDragCancelledByPinch = true;
+    return;
+  }
   e.preventDefault();
-  isDragging = true; // actual drag detected — touchend will place on release
   const touch = e.touches[0];
+  if (!isDragging && dragStartX >= 0) {
+    const moved = Math.hypot(touch.clientX - dragStartX, touch.clientY - dragStartY);
+    if (moved > DRAG_THRESHOLD_PX) isDragging = true; // drag threshold crossed, matches mouse path
+  }
   const rect = canvas.getBoundingClientRect();
   const sx = touch.clientX - rect.left;
   const sy = touch.clientY - rect.top;
@@ -1659,15 +1698,29 @@ window.addEventListener('touchmove', e => {
 
 window.addEventListener('touchend', e => {
   isDragging = false;
+  // Captured before clearing: this touchend may be the one that brings
+  // touches to 0, but placement below must still be gated on whether the
+  // gesture was poisoned by a pinch at any point, not on the post-clear value.
+  const cancelledByPinch = touchDragCancelledByPinch;
+  if (e.touches.length === 0) touchDragCancelledByPinch = false;
   if (!selectedPiece) return;
   const touch = e.changedTouches[0];
   const rect = canvas.getBoundingClientRect();
   const sx = touch.clientX - rect.left;
   const sy = touch.clientY - rect.top;
-  // Only place if finger lifted over the canvas area (not the toolbox panels)
-  if (sx >= 0 && sy >= 0 && sx <= canvas.width && sy <= canvas.height) {
+  // Only place if finger lifted over the canvas area (not the toolbox panels),
+  // and this gesture was never hijacked by a pinch.
+  if (!cancelledByPinch && sx >= 0 && sy >= 0 && sx <= canvas.width && sy <= canvas.height) {
     placePiece(screenToGrid(sx, sy).col, screenToGrid(sx, sy).row);
   }
+});
+
+window.addEventListener('touchcancel', e => {
+  // Browser-initiated interruption (e.g. an OS gesture stealing the touch) —
+  // drop all drag/pinch state so nothing stale leaks into the next gesture.
+  isDragging = false;
+  dragFloatX = -1; dragFloatY = -1;
+  touchDragCancelledByPinch = false;
 });
 
 // ── PLACED PIECES ─────────────────────────────────────────────────
