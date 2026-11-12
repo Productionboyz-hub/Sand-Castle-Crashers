@@ -64,6 +64,20 @@ Fourth commit, same day - two more asks from J after watching it:
   test_surge3 now switches ordinary waves off during its big-wave
   scenarios (they do damage now) and holds off the next big wave while it
   watches the moat dry.
+Fifth commit, same day - rising water in the moat (J's "SEE a moat
+  fill" ask). patch_water9.py, DRAWING ONLY: moats and the castle ring
+  are sunken trenches (two inner walls + floor; shallow / standard / deep
+  floors at 0.2 / 0.38 / 0.58 tile-heights, ring 0.38). The water surface
+  climbs the walls to just below the rim and drops as it dries, leaving
+  floor and walls damp. Level = p.depth * p.cover (ring: ringDepth *
+  per-tile cover). No new persistent state; damage, fill and dry rates
+  untouched. Neighbouring trench tiles join (no wall between them).
+  drawPoolOnTile() replaced by drawTrenchOnTile().
+  Tests (light, one run each): probe_trench.cjs ALL PASS on branch,
+  3 of 5 FAIL on the previous commit; test_surge3 15/15. Other probes
+  NOT re-run this commit. Rebuild main + patches 2-9 = committed file.
+  Known look issue: the old per-tile rim outline still draws a thin line
+  between joined moat tiles.
 GAME_VER still reads v0.8.10 on the branch - bump at merge/deploy time.
 Backlog changes: opened #17 (damp-band hard edge), #18 (water v3 open
   items).
