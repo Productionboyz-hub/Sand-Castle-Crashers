@@ -30,7 +30,7 @@ async function oneBigWave(p, setup) {
     // through the hold: the water must never be past the barrier, and must never reach behind the castle
     let worstPast = 0, behind = false, minCover = 9, maxCover = 0, ringSteps = [], pressedMax = 0, n = 0;
     const back = iso(2, 2, 0), ctr = iso(5, 5, 0);
-    while (bigWave && tick - bigWave.born < bigWave.draw + bigWave.rise + bigWave.hold && performance.now() - t0 < 40000) {
+    while (bigWave && (typeof bigWave.p === 'number' ? bigWave.p : tick - bigWave.born) < bigWave.draw + bigWave.rise + bigWave.hold && performance.now() - t0 < 40000) {   // big waves run on their own clock (bigWave.p) since patch_water5
       for (let i = 0; i < SWASH_N; i++) {
         if (barrierY[i] > -1e8 && baseY[i] > barrierY[i]) { const past = barrierY[i] - visY[i]; if (past > worstPast) worstPast = past; }
         if (pressed[i] > pressedMax) pressedMax = pressed[i];

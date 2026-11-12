@@ -521,8 +521,12 @@ const BIGWAVE_WALL_DMG   = 40;    // health the nearest wall loses when no moat 
 const BIGWAVE_CASTLE_HITS = 3;    // damageCastle() calls when nothing is in the way
 const BIGWAVE_GUARD_RADIUS = 6.5; // a piece must be within this many tiles of the castle centre to count
 let bigWave = null;               // the one active big wave, or null
+// ← TUNE: wave feel
+const SWASH_SPEED_MIN = 0.45;     // slowest wave (1 = the old fixed pace)
+const SWASH_SPEED_MAX = 2.1;      // fastest wave
+const BACKWASH_DRAG   = 0.55;     // how hard retreating water slows a wave running up into it
+const BACKWASH_MIN    = 0.3;      // an incoming wave never drops below this fraction of its speed
 let bigWaveTimer = BIGWAVE_FIRST;
-let bigWaveWarn = 0;              // frames left on the on-screen warning
 let ringCover = 0, ringDepth = 0, ringDamp = 0, ringFeed = 0; // castle ring: how far the water has poured round, how deep, how damp (drawing only)
 let castleShown = 100;            // castle health as DRAWN - eases toward castleHP so the castle melts instead of popping
 let pieceDrawHealth = 100;        // set by drawPlacedPieces() so walls draw melted to their health
@@ -534,17 +538,41 @@ const RING_TILES = [[2,3],[3,2],[4,2],[5,2],[6,2],[7,3],[7,4],[7,5],[7,6],[7,7],
 function spawnSwashWave() {
   const th = TH();
   const big = Math.random() < 0.25;
-  const dir = Math.random() < 0.5 ? -1 : 1;
+  const dir = Math.random() < 0.5 ? -1 : 1;        // +1 = comes in from the left and sloshes right; -1 = the reverse
+  const r = Math.random();
+  const spd = SWASH_SPEED_MIN + (SWASH_SPEED_MAX - SWASH_SPEED_MIN) * r * r;   // most waves lazy-to-medium, a few fast
   swashWaves.push({
-    born: tick | 0,
+    born: tick | 0, p: 0, spd, slow: 1,
     amp: th * (0.35 + Math.random() * 0.85) * (big ? 1.6 : 1),          // up to ~2 tiles of run-up
     rise: 30 + Math.random() * 40, fall: 80 + Math.random() * 150,
     seed: Math.random() * 100,
-    dir, v: 3 + Math.random() * 8,                                  // sideways travel, px per tick
-    x0: dir > 0 ? -SW * 0.15 + Math.random() * SW * 0.5 : SW * 1.15 - Math.random() * SW * 0.5,
-    sig: SW * (0.12 + Math.random() * 0.3), base: Math.random() * 0.45,
+    dir, v: 2.5 + Math.random() * 5,                                    // sideways travel, px per (speed-1) tick
+    x0: dir > 0 ? SW * (-0.12 + Math.random() * 0.4) : SW * (1.12 - Math.random() * 0.4),   // starts on its entry side
+    sig: SW * (0.07 + Math.random() * 0.12),                           // narrow where it lands...
+    fan: 1.2 + Math.random() * 2.3,                                     // ...and this many times wider by the time it is gone
+    base: Math.random() * 0.15,
   });
   swashNext = (tick | 0) + (Math.random() < 0.3 ? 12 + Math.random() * 30 : 50 + Math.random() * 170); // sometimes a quick double
+}
+
+// where a swash wave's bulge is centred, and how wide it has fanned, at clock value p
+function swashCentre(w, p) { return w.x0 + w.dir * w.v * p; }
+function swashWidth(w, p)  { return w.sig * (1 + w.fan * Math.min(1, Math.max(0, p) / (w.rise + w.fall))); }
+
+// How much water is draining back down the beach at screen x right now (px of run-up, weighted by speed).
+function backwashAt(x, except) {
+  let back = 0;
+  for (const o of swashWaves) {
+    if (o === except || o.p <= o.rise) continue;
+    const u = (o.p - o.rise) / o.fall;
+    if (u >= 1) continue;
+    const dx = (x - swashCentre(o, o.p)) / swashWidth(o, o.p);
+    back += o.amp * (1 - u) * Math.exp(-dx * dx) * o.spd;
+  }
+  return back;
+}
+function backwashSlow(x, except) {
+  return Math.max(BACKWASH_MIN, 1 - BACKWASH_DRAG * backwashAt(x, except) / TH());
 }
 
 function spawnBigWave() {
@@ -554,28 +582,41 @@ function spawnBigWave() {
   // rawY (the surge's own reach) goes right round the castle so every sea-facing moat gets fed;
   // what is DRAWN is held at the barrier / surge cap, so the water never runs past the castle.
   const amp = Math.max(th * 2.2, baseShoreYAt(c.x) - far.y + th * 0.5);
-  bigWave = { born: tick | 0, amp, cx: c.x, sig: TW() * (4.5 + Math.random() * 2),
+  const dir = Math.random() < 0.5 ? -1 : 1;   // +1 = comes in from the left and sloshes right
+  const slAmp = TW() * (2.4 + Math.random() * 1.8);   // how far to each side of the castle it travels
+  bigWave = { born: tick | 0, p: 0, spd: 0.7 + Math.random() * 0.7, slow: 1, dir, x: c.x - dir * slAmp,
+    amp, cx: c.x, sig: TW() * (4.5 + Math.random() * 2),
     back: th * (0.8 + Math.random() * 0.7), draw: 55, rise: 55, hold: 90, fall: 200,
-    sl: Math.random() * 6.28, slAmp: TW() * (2.4 + Math.random() * 1.8), hit: false };
-  bigWaveWarn = 150;
+    slAmp, hit: false };
 }
 
 function updateSwash(tk) {
   const th = TH();
   if (tk >= swashNext) spawnSwashWave();
+  // each wave runs on its own clock: its random speed, slowed while it runs up into backwash
+  for (const w of swashWaves) {
+    w.slow = w.p < w.rise ? backwashSlow(swashCentre(w, w.p), w) : 1;
+    w.p += w.spd * w.slow;
+  }
   for (let i = swashWaves.length - 1; i >= 0; i--) {
     const w = swashWaves[i];
-    if (tk - w.born > w.rise + w.fall + 60) swashWaves.splice(i, 1);
+    if (w.p > w.rise + w.fall + 60) swashWaves.splice(i, 1);
   }
   let bAge = -1, bA = 0, bC = 0;
   if (bigWave) {
-    bAge = tk - bigWave.born;
     const w = bigWave;
+    w.slow = (w.p >= w.draw && w.p < w.draw + w.rise) ? Math.max(0.5, backwashSlow(w.x, null)) : 1;
+    w.p += w.spd * w.slow;
+    bAge = w.p;
     if (bAge < w.draw) bA = -w.back * Math.sin(Math.PI * bAge / w.draw);                       // draws back first
     else if (bAge < w.draw + w.rise) { const u = (bAge - w.draw) / w.rise; bA = w.amp * (1 - (1 - u) * (1 - u) * (1 - u)); }
     else if (bAge < w.draw + w.rise + w.hold) bA = w.amp * (1 - 0.05 * Math.sin((bAge - w.draw - w.rise) * 0.2));
     else { const u = (bAge - w.draw - w.rise - w.hold) / w.fall; if (u >= 1) { bigWave = null; bA = 0; } else { const q = 1 - u; bA = w.amp * q * q * (3 - 2 * q); } }
-    bC = w.cx + (bAge > w.draw ? Math.sin((bAge - w.draw) * 0.05 + w.sl) * w.slAmp : 0);    // sloshes left and right
+    // crosses from its entry side to the far side, right over the castle at the moment it hits
+    const pr = bAge <= w.draw ? 0 : bAge < w.draw + w.rise ? 0.5 * (bAge - w.draw) / w.rise
+             : Math.min(1, 0.5 + 0.5 * (bAge - w.draw - w.rise) / (w.hold + w.fall * 0.5));
+    bC = w.cx + w.dir * w.slAmp * (2 * pr - 1);
+    if (bigWave) bigWave.x = bC;
   }
   buildBarrier();
   // see-saw: the whole waterline rocks, one end up while the other goes down
@@ -585,12 +626,12 @@ function updateSwash(tk) {
     let run = 0;
     for (let j = 0; j < swashWaves.length; j++) {
       const w = swashWaves[j];
-      const age = (tk - w.born) - (noise2(sx * 0.0035 + w.seed, w.seed * 0.7) + 0.5) * 30;
+      const age = w.p - (noise2(sx * 0.0035 + w.seed, w.seed * 0.7) + 0.5) * 30;
       if (age <= 0) continue;
       let a;
       if (age < w.rise) { const u = age / w.rise; a = 1 - (1 - u) * (1 - u); }
       else { const u = (age - w.rise) / w.fall; if (u >= 1) continue; a = 1 - u; a = a * a * (3 - 2 * a); }
-      const dx = (sx - (w.x0 + w.dir * w.v * age)) / w.sig;               // the bulge travels along the beach
+      const dx = (sx - swashCentre(w, age)) / swashWidth(w, age);         // the bulge travels along the beach, fanning out
       const lat = w.base + (1 - w.base) * Math.exp(-dx * dx);
       const rr = a * w.amp * lat * (0.75 + 0.25 * (noise2(sx * 0.006 + w.seed * 3.1, 5.5) + 0.5));
       if (rr > run) run = rr;
@@ -711,8 +752,7 @@ function tickSurge() {
     if (ringDepth > 0) { ringDepth = Math.max(0, ringDepth - 0.003); if (ringDepth === 0) ringCover = 0; }
     if (ringDamp > 0) ringDamp = Math.max(0, ringDamp - 0.001);
   }
-  if (bigWaveWarn > 0) bigWaveWarn--;
-  if (bigWave && !bigWave.hit && tick - bigWave.born >= bigWave.draw + bigWave.rise) { bigWave.hit = true; applyBigWaveHit(); }
+  if (bigWave && !bigWave.hit && bigWave.p >= bigWave.draw + bigWave.rise) { bigWave.hit = true; applyBigWaveHit(); }
   if (gameOver || wavePhase !== 'defend') { bigWaveTimer = BIGWAVE_FIRST; return; }
   if (!bigWave && --bigWaveTimer <= 0) {
     spawnBigWave();
@@ -753,20 +793,6 @@ function castleBlock(c, r, z, h, a, b, d) {
 function meltBlock(c, r, z, h, a, b, d) {
   if (z >= meltCutZ) return;
   isoBlock(c, r, z, Math.min(h, meltCutZ - z), a, b, d);
-}
-
-function drawBigWaveWarning() {
-  if (bigWaveWarn <= 0) return;
-  const a = Math.min(1, bigWaveWarn / 30) * (0.65 + 0.35 * Math.sin(tick * 0.3));
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.font = 'bold ' + Math.round(Math.min(34, SW * 0.05)) + 'px monospace';
-  ctx.fillStyle = 'rgba(8,16,26,' + (0.55 * a).toFixed(2) + ')';
-  const tw = ctx.measureText('BIG WAVE!').width + 36;
-  ctx.beginPath(); ctx.roundRect(SW / 2 - tw / 2, SH * 0.16 - 32, tw, 46, 10); ctx.fill();
-  ctx.fillStyle = 'rgba(140,225,255,' + a.toFixed(2) + ')';
-  ctx.fillText('BIG WAVE!', SW / 2, SH * 0.16);
-  ctx.restore();
 }
 
 // ── Sand texture offscreen ────────────────────────────────────────
@@ -2730,7 +2756,7 @@ canvas.addEventListener('click', e => {
   coins = 0;
   truckCooldown = 0;
   healthPeekCol = -1; healthPeekRow = -1; healthPeekTimer = 0;
-  bigWave = null; bigWaveTimer = BIGWAVE_FIRST; bigWaveWarn = 0;
+  bigWave = null; bigWaveTimer = BIGWAVE_FIRST;
   ringCover = 0; ringDepth = 0; ringDamp = 0; ringFeed = 0; castleShown = CASTLE_MAX_HP;
   selectedCounter = null;
   document.querySelectorAll('.counter-btn.selected').forEach(b => b.classList.remove('selected'));
@@ -2755,7 +2781,7 @@ canvas.addEventListener('touchend', e => {
   coins = 0;
   truckCooldown = 0;
   healthPeekCol = -1; healthPeekRow = -1; healthPeekTimer = 0;
-  bigWave = null; bigWaveTimer = BIGWAVE_FIRST; bigWaveWarn = 0;
+  bigWave = null; bigWaveTimer = BIGWAVE_FIRST;
   ringCover = 0; ringDepth = 0; ringDamp = 0; ringFeed = 0; castleShown = CASTLE_MAX_HP;
   selectedCounter = null;
   document.querySelectorAll('.counter-btn.selected').forEach(b => b.classList.remove('selected'));
@@ -3843,7 +3869,6 @@ function render() {
   drawTruck();            // ← cleaner truck, if active
   drawLightningStrikes(); // ← countermeasure bolt animations
   drawCastleHUD();        // ← castle HP bar upper-left
-  drawBigWaveWarning();   // ← 'BIG WAVE!' banner while one is coming
   if (!gameOver && wavePhase === 'build') drawWaveButton();
 
   if (gameOver) {

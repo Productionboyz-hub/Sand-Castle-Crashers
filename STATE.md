@@ -17,6 +17,14 @@ Verification (headless only - NOT a device pass):
   vs desktop ~1.2). probe_grid.cjs PASS on branch (0.88), FAILED on
   pre-fix v3 (2.8). In-repo scripts rebuild the committed file from main
   byte-for-byte.
+Second commit, same day - J tested the branch on PC ("water looks great")
+  and asked for wave changes: no BIG WAVE banner; waves enter from one
+  side, slosh across to the other and fan out (big waves too); random
+  slow/fast waves; a retreating wave slows an incoming one. Done in
+  patch_water5.py. Each wave now runs on its own clock (w.p), not
+  tick - born. probe_waves.cjs: ALL PASS on branch, 5 of 7 FAILED on the
+  previous commit. test_surge3 15/15 x3 runs, block + grid probes PASS.
+  New TUNE knobs: SWASH_SPEED_MIN/MAX, BACKWASH_DRAG, BACKWASH_MIN.
 GAME_VER still reads v0.8.10 on the branch - bump at merge/deploy time.
 Backlog changes: opened #17 (damp-band hard edge), #18 (water v3 open
   items).
@@ -258,6 +266,9 @@ Known-good before this session: 5b5373b.
     BIGWAVE_GAP_MIN/MAX 700-1500 ticks (~12-25 s), BIGWAVE_FIRST 480.
     Old per-tile foam dots removed (they showed as stripes in the
     shallows); foam now only along the real water edge.
+    Big waves now arrive with no banner (J's call) - check on device
+    that the draw-back before the surge is enough of a tell. Wave feel
+    knobs (SWASH_SPEED_MIN/MAX, BACKWASH_DRAG/MIN) are first guesses.
     Status: open - needs coach device pass before merge.
 
 ## Deviations from WORKFLOW, accepted
