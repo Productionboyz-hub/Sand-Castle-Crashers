@@ -409,41 +409,364 @@ function isShore(col, row) {
 }
 
 // ── WATER COLOR ───────────────────────────────────────────────────
+// v0.9 water: built at 1/W_SCALE resolution and upscaled with smoothing (far fewer pixels than the old
+// full-res build, so there is budget for swell, caustics and glints). Alpha is real: the first stretch of
+// water is see-through so the sand shows under the shallows.
+const W_SCALE = SW * SH < 600000 ? 2 : 3;   // small screens (phones) get a finer water texture
+const WATER_PATTERN_MIN_PX = 24;             // ← TUNE: ripples/glints never shrink below this tile size (phones have ~7 px tiles)
+const WW = Math.ceil(SW / W_SCALE), WH = Math.ceil(SH / W_SCALE);
 const wCanvas = document.createElement('canvas');
-wCanvas.width = SW; wCanvas.height = SH;
+wCanvas.width = WW; wCanvas.height = WH;
 const wCtx = wCanvas.getContext('2d');
+const wImg = wCtx.createImageData(WW, WH);
 
-// Depth-gradient endpoints — shallow/turquoise right at the waterline,
-// deepening toward the current dark blue further from shore (down-screen).
-const WATER_SHALLOW = [90, 190, 200];
-const WATER_DEEP     = [20, 70, 130];
+// Depth-gradient stops, measured from the tide line (baseY), not from the surging edge.
+const WATER_SHALLOW = [118, 212, 206];
+const WATER_MID     = [36, 148, 186];
+const WATER_DEEP    = [14, 60, 120];
 
 function buildWaterTex(t) {
-  const imgd = wCtx.createImageData(SW, SH);
-  const rampSpan = SH * 0.35; // ramp fully resolves over 35% of screen height below the waterline
-  for (let sy = 0; sy < SH; sy++) {
-    // 0 = right at/above the mean waterline (shallow), 1 = fully deep water
-    const depthT = Math.max(0, Math.min(1, (sy - MEAN_WATERLINE_Y) / rampSpan));
-    const rampR = WATER_SHALLOW[0] + (WATER_DEEP[0]-WATER_SHALLOW[0]) * depthT;
-    const rampG = WATER_SHALLOW[1] + (WATER_DEEP[1]-WATER_SHALLOW[1]) * depthT;
-    const rampB = WATER_SHALLOW[2] + (WATER_DEEP[2]-WATER_SHALLOW[2]) * depthT;
-    for (let sx = 0; sx < SW; sx++) {
-      const wx = sx / SW, wy = sy / SH;
-      const n1 = fbm(wx*6 + t*0.11, wy*6 - t*0.08, 3);
-      const n2 = fbm(wx*11 - t*0.07, wy*11 + t*0.10, 2);
-      const n  = n1*0.6 + n2*0.4;
-      const dx = wx - 0.5, dy = wy - 0.08;
-      const bloom = Math.max(0, 1 - Math.sqrt(dx*dx*1.8 + dy*dy*4)*2.0);
-      const base = 0.3 + n*0.45 + bloom*0.4;
-      // Depth ramp underneath, existing FBM shimmer + bloom kept on top
-      const r = Math.min(255, (rampR + base*35  + bloom*55)|0);
-      const g = Math.min(255, (rampG + base*65  + bloom*45)|0);
-      const b = Math.min(255, (rampB + base*90  + bloom*70)|0);
-      const idx = (sy*SW+sx)*4;
-      imgd.data[idx]=r; imgd.data[idx+1]=g; imgd.data[idx+2]=b; imgd.data[idx+3]=255;
+  const data = wImg.data;
+  const th = Math.max(TH(), WATER_PATTERN_MIN_PX);   // pattern scale, floored so phones don't alias
+  const rampSpan = SH * 0.42;
+  const k1 = 6.2832 / (th * 2.6), k2 = 6.2832 / (th * 1.65); // two swell trains (wavelength in px)
+  const drift = Math.sin(t * 0.13) * 0.35;                   // swell direction wanders over time
+  const band = th * 0.6;                                     // lacy foam just behind the leading edge
+  for (let x = 0; x < WW; x++) {
+    const sx = x * W_SCALE;
+    const edgeY = visShoreYAt(sx);            // where the water actually is right now (with surge)
+    const tideY = baseShoreYAt(sx);           // the tide line the surge runs up from
+    const y0 = Math.max(0, Math.floor(edgeY / W_SCALE) - 1);
+    for (let y = 0; y < y0; y++) data[(y * WW + x) * 4 + 3] = 0;
+    for (let y = y0; y < WH; y++) {
+      const sy = y * W_SCALE;
+      const dv = sy - edgeY;                  // px behind the leading edge
+      const idx = (y * WW + x) * 4;
+      if (dv < 0) { data[idx + 3] = 0; continue; }
+      const dp = sy > tideY ? sy - tideY : 0; // depth for colour; 0 inside the thin run-up sheet
+      const dT = Math.min(1, dp / rampSpan);
+      const e = dT * dT * (3 - 2 * dT);
+      let r, g, b;
+      if (e < 0.4) { const u = e / 0.4;
+        r = WATER_SHALLOW[0] + (WATER_MID[0] - WATER_SHALLOW[0]) * u;
+        g = WATER_SHALLOW[1] + (WATER_MID[1] - WATER_SHALLOW[1]) * u;
+        b = WATER_SHALLOW[2] + (WATER_MID[2] - WATER_SHALLOW[2]) * u;
+      } else { const u = (e - 0.4) / 0.6;
+        r = WATER_MID[0] + (WATER_DEEP[0] - WATER_MID[0]) * u;
+        g = WATER_MID[1] + (WATER_DEEP[1] - WATER_MID[1]) * u;
+        b = WATER_MID[2] + (WATER_DEEP[2] - WATER_MID[2]) * u;
+      }
+      const wx = sx / th, wy = sy / th;       // tile-relative, so the look is the same at any zoom
+      const warp = fbm(wx * 0.22 + t * 0.05, wy * 0.22 - t * 0.04, 2);
+      // swell crests rolling toward shore, bent by the warp so they never run as straight stripes
+      const s = Math.sin(dp * k1 + t * 1.9 + warp * 5.5 + sx * k1 * drift) * 0.6
+              + Math.sin(dp * k2 + t * 2.7 - warp * 4.0 - sx * k2 * (0.25 - drift)) * 0.4;
+      const crest = s > 0 ? s * s * s : 0;
+      const swellFade = (0.25 + 0.75 * (1 - e)) * Math.min(1, dp / (th * 0.4));
+      // caustics: the shifting net of light in the shallows (and over the run-up sheet)
+      const c1 = 1 - Math.abs(noise2(wx * 0.9 + t * 0.22, wy * 1.6 - t * 0.15));
+      const c2 = 1 - Math.abs(noise2(wx * 1.1 - t * 0.17 + 31.7, wy * 1.9 + t * 0.2 + 11.3));
+      const cc = c1 * c2;
+      const caus = cc * cc * cc * cc * cc * (1 - e) * (1 - e);
+      // sun glints riding the crests
+      const gl = noise2(wx * 3.1 + t * 0.9, wy * 5.3 - t * 1.3);
+      const glint = (crest > 0.3 && gl > 0.36) ? (gl - 0.36) * 3.2 : 0;
+      const shade = warp * 26 + (s < 0 ? s : 0) * 22 * swellFade;
+      const light = crest * 78 * swellFade + caus * 92 + glint * 150;
+      r += shade * 0.5 + light * 0.85; g += shade * 0.8 + light * 0.95; b += shade + light;
+      let a = 0.40 + 0.60 * Math.min(1, dp / (th * 1.5));
+      if (dp === 0) {                         // run-up sheet: thin, streaky water sliding over the sand
+        const streak = noise2(wx * 0.7 + t * 0.3, wy * 3.4 + t * 1.1);
+        a = 0.36 + streak * 0.14;
+        if (streak > 0.18) { const f = (streak - 0.18) * 1.5; r += (255 - r) * f; g += (255 - g) * f; b += (255 - b) * f; a += f * 0.4; }
+      }
+      if (dv < band) {
+        const lace = noise2(wx * 2.3 + t * 0.5, wy * 4.2 + t * 0.9);
+        const f = (1 - dv / band) * (lace > -0.05 ? 0.78 : 0.16);
+        r += (255 - r) * f; g += (255 - g) * f; b += (255 - b) * f;
+        if (f > a) a = f;
+      }
+      data[idx]     = r < 0 ? 0 : r > 255 ? 255 : r;
+      data[idx + 1] = g < 0 ? 0 : g > 255 ? 255 : g;
+      data[idx + 2] = b < 0 ? 0 : b > 255 ? 255 : b;
+      data[idx + 3] = a > 1 ? 255 : a * 255;
     }
   }
-  wCtx.putImageData(imgd, 0, 0);
+  wCtx.putImageData(wImg, 0, 0);
+}
+
+// ── SWASH + BIG WAVES (v0.9) ──────────────────────────────────────
+// The visible water edge = tide line (shoreYAtScreenX) minus a run-up that comes in uneven sets and
+// sloshes sideways along the beach. Ordinary swash is DRAWING ONLY: isTileWater() is untouched and stays
+// the single source of truth for building, crabs and tourists.
+// BIG WAVES are the one gameplay hook: in the defend phase a big wave draws back, surges to the castle,
+// and applyBigWaveHit() damages defences with the locked chain (moat piece -> nearest wall -> castle).
+const SWASH_STEP = 8;
+const SWASH_N = Math.ceil(SW / SWASH_STEP) + 2;
+const visY = new Float32Array(SWASH_N), prevVisY = new Float32Array(SWASH_N), baseY = new Float32Array(SWASH_N);
+const wetY = new Float32Array(SWASH_N), wetAge = new Float32Array(SWASH_N);
+const rawY = new Float32Array(SWASH_N);      // where the surge WOULD reach with nothing in its way
+const barrierY = new Float32Array(SWASH_N);  // sea-side edge of the castle ring / placed defences, per screen column
+const pressed = new Float32Array(SWASH_N);   // px of surge held back by the barrier (drives the foam pile-up)
+let surgeCapY = -1e9;                        // no surge is drawn above this screen y (set each frame by buildBarrier)
+const swashWaves = [];
+let swashNext = 30, swashReady = false;
+
+// ← TUNE: big-wave gameplay
+const BIGWAVE_FIRST      = 480;   // ticks into a defend phase before the first big wave can come
+const BIGWAVE_GAP_MIN    = 700;   // ticks between big waves (min) — 60 ticks = 1 second
+const BIGWAVE_GAP_MAX    = 1500;  // ticks between big waves (max)
+const BIGWAVE_MOAT_DMG   = 34;    // health a moat piece loses when it absorbs a big wave
+const BIGWAVE_WALL_DMG   = 40;    // health the nearest wall loses when no moat is in the way
+const BIGWAVE_CASTLE_HITS = 3;    // damageCastle() calls when nothing is in the way
+const BIGWAVE_GUARD_RADIUS = 6.5; // a piece must be within this many tiles of the castle centre to count
+let bigWave = null;               // the one active big wave, or null
+let bigWaveTimer = BIGWAVE_FIRST;
+let bigWaveWarn = 0;              // frames left on the on-screen warning
+let ringCover = 0, ringDepth = 0, ringDamp = 0, ringFeed = 0; // castle ring: how far the water has poured round, how deep, how damp (drawing only)
+let castleShown = 100;            // castle health as DRAWN - eases toward castleHP so the castle melts instead of popping
+let pieceDrawHealth = 100;        // set by drawPlacedPieces() so walls draw melted to their health
+let meltCutZ = 1e9;
+let tiltPhase = Math.random() * 6.28;
+// the 17 ring tiles (same list drawMoat uses) and the castle footprint, as barrier tiles
+const RING_TILES = [[2,3],[3,2],[4,2],[5,2],[6,2],[7,3],[7,4],[7,5],[7,6],[7,7],[6,7],[5,7],[4,7],[3,7],[2,6],[2,5],[2,4]];
+
+function spawnSwashWave() {
+  const th = TH();
+  const big = Math.random() < 0.25;
+  const dir = Math.random() < 0.5 ? -1 : 1;
+  swashWaves.push({
+    born: tick | 0,
+    amp: th * (0.35 + Math.random() * 0.85) * (big ? 1.6 : 1),          // up to ~2 tiles of run-up
+    rise: 30 + Math.random() * 40, fall: 80 + Math.random() * 150,
+    seed: Math.random() * 100,
+    dir, v: 3 + Math.random() * 8,                                  // sideways travel, px per tick
+    x0: dir > 0 ? -SW * 0.15 + Math.random() * SW * 0.5 : SW * 1.15 - Math.random() * SW * 0.5,
+    sig: SW * (0.12 + Math.random() * 0.3), base: Math.random() * 0.45,
+  });
+  swashNext = (tick | 0) + (Math.random() < 0.3 ? 12 + Math.random() * 30 : 50 + Math.random() * 170); // sometimes a quick double
+}
+
+function spawnBigWave() {
+  const th = TH();
+  const c = iso(5, 5, 0);                    // castle centre
+  const far = iso(2, 2, 0);                  // far corner of the castle ring
+  // rawY (the surge's own reach) goes right round the castle so every sea-facing moat gets fed;
+  // what is DRAWN is held at the barrier / surge cap, so the water never runs past the castle.
+  const amp = Math.max(th * 2.2, baseShoreYAt(c.x) - far.y + th * 0.5);
+  bigWave = { born: tick | 0, amp, cx: c.x, sig: TW() * (4.5 + Math.random() * 2),
+    back: th * (0.8 + Math.random() * 0.7), draw: 55, rise: 55, hold: 90, fall: 200,
+    sl: Math.random() * 6.28, slAmp: TW() * (2.4 + Math.random() * 1.8), hit: false };
+  bigWaveWarn = 150;
+}
+
+function updateSwash(tk) {
+  const th = TH();
+  if (tk >= swashNext) spawnSwashWave();
+  for (let i = swashWaves.length - 1; i >= 0; i--) {
+    const w = swashWaves[i];
+    if (tk - w.born > w.rise + w.fall + 60) swashWaves.splice(i, 1);
+  }
+  let bAge = -1, bA = 0, bC = 0;
+  if (bigWave) {
+    bAge = tk - bigWave.born;
+    const w = bigWave;
+    if (bAge < w.draw) bA = -w.back * Math.sin(Math.PI * bAge / w.draw);                       // draws back first
+    else if (bAge < w.draw + w.rise) { const u = (bAge - w.draw) / w.rise; bA = w.amp * (1 - (1 - u) * (1 - u) * (1 - u)); }
+    else if (bAge < w.draw + w.rise + w.hold) bA = w.amp * (1 - 0.05 * Math.sin((bAge - w.draw - w.rise) * 0.2));
+    else { const u = (bAge - w.draw - w.rise - w.hold) / w.fall; if (u >= 1) { bigWave = null; bA = 0; } else { const q = 1 - u; bA = w.amp * q * q * (3 - 2 * q); } }
+    bC = w.cx + (bAge > w.draw ? Math.sin((bAge - w.draw) * 0.05 + w.sl) * w.slAmp : 0);    // sloshes left and right
+  }
+  buildBarrier();
+  // see-saw: the whole waterline rocks, one end up while the other goes down
+  const tilt = Math.sin(tk * 0.021 + tiltPhase) * th * 0.6 * (noise2(tk * 0.003, 9.1) + 0.7);
+  for (let i = 0; i < SWASH_N; i++) {
+    const sx = i * SWASH_STEP;
+    let run = 0;
+    for (let j = 0; j < swashWaves.length; j++) {
+      const w = swashWaves[j];
+      const age = (tk - w.born) - (noise2(sx * 0.0035 + w.seed, w.seed * 0.7) + 0.5) * 30;
+      if (age <= 0) continue;
+      let a;
+      if (age < w.rise) { const u = age / w.rise; a = 1 - (1 - u) * (1 - u); }
+      else { const u = (age - w.rise) / w.fall; if (u >= 1) continue; a = 1 - u; a = a * a * (3 - 2 * a); }
+      const dx = (sx - (w.x0 + w.dir * w.v * age)) / w.sig;               // the bulge travels along the beach
+      const lat = w.base + (1 - w.base) * Math.exp(-dx * dx);
+      const rr = a * w.amp * lat * (0.75 + 0.25 * (noise2(sx * 0.006 + w.seed * 3.1, 5.5) + 0.5));
+      if (rr > run) run = rr;
+    }
+    if (bigWave) {
+      const dx = (sx - bC) / bigWave.sig;
+      const lat = Math.exp(-dx * dx);
+      if (bA < 0) run += bA * (0.45 + 0.55 * lat);
+      else { const rr = bA * lat; if (rr > run) run = rr; }
+    }
+    if (run > 0) run *= 1 + 0.16 * Math.abs(Math.sin(sx * 0.02 + tk * 0.012));   // scalloped, shell-ribbed edge
+    run += tilt * (sx / SW - 0.5) * 2;
+    const chop = Math.sin(sx * 0.045 + tk * 0.05) * 1.2 + Math.sin(sx * 0.013 - tk * 0.031) * 1.6;
+    const b0 = shoreYAtScreenX(sx) + chop;
+    let y = b0 - run;
+    rawY[i] = y;
+    pressed[i] = 0;
+    // the surge stops at the castle ring / placed defences. (If the TIDE itself is already past them, leave it.)
+    // Beside the castle it may wrap up to surgeCapY (a little above the castle's sea-side corner) and no further.
+    const lim = barrierY[i] > surgeCapY ? barrierY[i] : surgeCapY;
+    if (b0 > lim && y < lim) {
+      if (barrierY[i] > -1e8) { pressed[i] = lim - y; y = lim; }          // hard stop at the castle / defences
+      else {                                                               // beside it: a soft, rounded, moving crest
+        const soft = th * 0.9;
+        y = lim - soft * (1 - Math.exp(-(lim - y) / soft)) * (0.75 + 0.25 * Math.sin(sx * 0.03 + tk * 0.06));
+      }
+    }
+    baseY[i] = b0;
+    prevVisY[i] = swashReady ? visY[i] : y;
+    visY[i] = y;
+    if (!swashReady || y <= wetY[i]) { wetY[i] = y; wetAge[i] = 0; }
+    else { wetY[i] = Math.min(y, wetY[i] + Math.max(th * 0.004, (y - wetY[i]) * 0.007)); wetAge[i]++; }
+  }
+  swashReady = true;
+}
+
+function swashLerp(arr, sx) {
+  if (!swashReady) updateSwash(0);
+  const f = sx / SWASH_STEP;
+  const i = f < 0 ? 0 : f > SWASH_N - 2 ? SWASH_N - 2 : f | 0;
+  return arr[i] + (arr[i + 1] - arr[i]) * (f - i);
+}
+function visShoreYAt(sx)  { return swashLerp(visY, sx); }
+function baseShoreYAt(sx) { return swashLerp(baseY, sx); }
+
+function rawShoreYAt(sx) { return swashLerp(rawY, sx); }
+
+// Sea-side edge (screen y) of everything the surge has to stop at, sampled per screen column:
+// the castle ring, plus any placed piece close enough to the castle to be defending it.
+function addBarrierTile(c, r) {
+  const L = iso(c, r + 1, 0), B = iso(c + 1, r + 1, 0), R = iso(c + 1, r, 0);
+  const i0 = Math.max(0, Math.ceil(L.x / SWASH_STEP)), i1 = Math.min(SWASH_N - 1, Math.floor(R.x / SWASH_STEP));
+  for (let i = i0; i <= i1; i++) {
+    const x = i * SWASH_STEP;
+    const y = x <= B.x ? L.y + (B.y - L.y) * (x - L.x) / (B.x - L.x || 1) : B.y + (R.y - B.y) * (x - B.x) / (R.x - B.x || 1);
+    if (y > barrierY[i]) barrierY[i] = y;
+  }
+}
+function guardsCastle(p) { return Math.hypot(p.col - 5, p.row - 5) <= BIGWAVE_GUARD_RADIUS; }
+function buildBarrier() {
+  barrierY.fill(-1e9);
+  for (let k = 0; k < RING_TILES.length; k++) addBarrierTile(RING_TILES[k][0], RING_TILES[k][1]);
+  for (const p of placedPieces) if (guardsCastle(p)) addBarrierTile(p.col, p.row);
+  // the furthest-seaward point of the barrier; the surge may wrap ~1.6 tile-heights above it, beside the castle
+  let frontY = -1e9;
+  for (let i = 0; i < SWASH_N; i++) if (barrierY[i] > frontY) frontY = barrierY[i];
+  surgeCapY = frontY - TH() * 1.6;
+}
+
+// Has the surge reached this tile's sea-side corner? (rawY = the surge before the barrier stops it.)
+// Used only by the big-wave hazard and the moat pour. Building, crabs, tourists and the truck keep
+// using isTileWater() (the tide).
+function surgeReaches(col, row) {
+  const f = iso(col + 1, row + 1, 0);
+  return rawShoreYAt(f.x) <= f.y + 2;
+}
+
+function applyBigWaveHit() {
+  if (gameOver) return;
+  const hit = p => guardsCastle(p) && surgeReaches(p.col, p.row);
+  // 1. moat pieces the wave reaches absorb it (they pour full in tickSurge)
+  const moats = placedPieces.filter(p => p.id.indexOf('moat-') === 0 && hit(p));
+  if (moats.length) { moats.forEach(p => { p.health = Math.max(0, p.health - BIGWAVE_MOAT_DMG); }); return; }
+  // no moat held it: the water reaches the castle ring and pours in
+  ringFeed = bigWave ? bigWave.hold + 90 : 160;
+  // 2. the nearest wall / drawbridge on the castle's sea side takes it
+  let best = null, bestD = 1e9;
+  for (const p of placedPieces) {
+    if (p.id.indexOf('moat-') === 0 || !hit(p)) continue;
+    const d = Math.hypot(p.col - 7, p.row - 7);
+    if (d < bestD) { bestD = d; best = p; }
+  }
+  if (best) { best.health = Math.max(0, best.health - BIGWAVE_WALL_DMG); return; }
+  // 3. nothing in the way: the castle itself
+  for (let i = 0; i < BIGWAVE_CASTLE_HITS; i++) damageCastle();
+}
+
+// Called once per frame from render(), right after tickDeterioration().
+function tickSurge() {
+  castleShown += (castleHP - castleShown) * 0.035;
+  // placed moats: pour while the surge reaches them, then dry up
+  let moatHolding = false;
+  for (const p of placedPieces) {
+    if (p.id.indexOf('moat-') !== 0) continue;
+    const fed = surgeReaches(p.col, p.row);
+    if (fed && guardsCastle(p)) moatHolding = true;
+    if (fed) { p.cover = Math.min(1, (p.cover || 0) + 0.013); p.depth = Math.min(1, (p.depth || 0) + 0.05); p.damp = 1; }
+    else {
+      if (p.depth > 0) { p.depth = Math.max(0, p.depth - 0.0035); if (p.depth === 0) p.cover = 0; }
+      if (p.damp > 0) p.damp = Math.max(0, p.damp - 0.0012);
+    }
+  }
+  // castle ring: pours round from the sea-side corner while a wave is against it, then dries up
+  if (ringFeed > 0) ringFeed--;
+  const ringFed = ringFeed > 0 || (!moatHolding && surgeReaches(7, 7));
+  if (ringFed) { ringCover = Math.min(1, ringCover + 0.008); ringDepth = Math.min(1, ringDepth + 0.05); ringDamp = 1; }
+  else {
+    if (ringDepth > 0) { ringDepth = Math.max(0, ringDepth - 0.003); if (ringDepth === 0) ringCover = 0; }
+    if (ringDamp > 0) ringDamp = Math.max(0, ringDamp - 0.001);
+  }
+  if (bigWaveWarn > 0) bigWaveWarn--;
+  if (bigWave && !bigWave.hit && tick - bigWave.born >= bigWave.draw + bigWave.rise) { bigWave.hit = true; applyBigWaveHit(); }
+  if (gameOver || wavePhase !== 'defend') { bigWaveTimer = BIGWAVE_FIRST; return; }
+  if (!bigWave && --bigWaveTimer <= 0) {
+    spawnBigWave();
+    bigWaveTimer = BIGWAVE_GAP_MIN + Math.random() * (BIGWAVE_GAP_MAX - BIGWAVE_GAP_MIN);
+  }
+}
+
+// Water pouring across one tile from its sea-side corner: cover 0..1 = how far it has spread,
+// depth 0..1 = how much is left (it dries by fading in place). Colours c1 -> c2 down the tile.
+function drawPoolOnTile(col, row, cover, depth, c1, c2) {
+  if (cover <= 0.001 || depth <= 0.001) return;
+  const s = 2 * (1 - cover);                 // wet where u + v >= s  (u,v = 0..1 across the tile)
+  const pts = s >= 1 ? [[1, s - 1], [1, 1], [s - 1, 1]] : [[s, 0], [1, 0], [1, 1], [0, 1], [0, s]];
+  const a0 = ctx.globalAlpha;
+  const top = iso(col, row, 0), bot = iso(col + 1, row + 1, 0);
+  const g = ctx.createLinearGradient(top.x, top.y, bot.x, bot.y);
+  g.addColorStop(0, c1); g.addColorStop(1, c2);
+  ctx.globalAlpha = a0 * Math.min(1, depth * 1.5);
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  pts.forEach((q, k) => { const w = iso(col + q[0], row + q[1], 0.01); if (k) ctx.lineTo(w.x, w.y); else ctx.moveTo(w.x, w.y); });
+  ctx.closePath(); ctx.fill();
+  if (cover < 0.995) {                       // foamy front while it is still pouring
+    const A = iso(col + pts[0][0], row + pts[0][1], 0.01), Z = iso(col + pts[pts.length - 1][0], row + pts[pts.length - 1][1], 0.01);
+    ctx.strokeStyle = 'rgba(245,252,255,0.9)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(Z.x, Z.y); ctx.stroke();
+  }
+  ctx.globalAlpha = a0;
+}
+
+// Castle + walls melt: blocks are cut off above a height that drops with health.
+function castleCutZ() { return 0.5 + 1.95 * Math.max(0, castleShown) / CASTLE_MAX_HP; }
+function castleBlock(c, r, z, h, a, b, d) {
+  const cut = castleCutZ();
+  if (z >= cut) return;
+  isoBlock(c, r, z, Math.min(h, cut - z), a, b, d);
+}
+function meltBlock(c, r, z, h, a, b, d) {
+  if (z >= meltCutZ) return;
+  isoBlock(c, r, z, Math.min(h, meltCutZ - z), a, b, d);
+}
+
+function drawBigWaveWarning() {
+  if (bigWaveWarn <= 0) return;
+  const a = Math.min(1, bigWaveWarn / 30) * (0.65 + 0.35 * Math.sin(tick * 0.3));
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.font = 'bold ' + Math.round(Math.min(34, SW * 0.05)) + 'px monospace';
+  ctx.fillStyle = 'rgba(8,16,26,' + (0.55 * a).toFixed(2) + ')';
+  const tw = ctx.measureText('BIG WAVE!').width + 36;
+  ctx.beginPath(); ctx.roundRect(SW / 2 - tw / 2, SH * 0.16 - 32, tw, 46, 10); ctx.fill();
+  ctx.fillStyle = 'rgba(140,225,255,' + a.toFixed(2) + ')';
+  ctx.fillText('BIG WAVE!', SW / 2, SH * 0.16);
+  ctx.restore();
 }
 
 // ── Sand texture offscreen ────────────────────────────────────────
@@ -650,23 +973,48 @@ function drawBackdrop() {
 }
 
 function buildShorelinePath() {
-  const STEP = 40;
   ctx.beginPath();
-  ctx.moveTo(0, shoreYAtScreenX(0));
-  for (let sx = STEP; sx < SW; sx += STEP) {
-    ctx.lineTo(sx, shoreYAtScreenX(sx));
-  }
-  ctx.lineTo(SW, shoreYAtScreenX(SW));
+  ctx.moveTo(0, visY[0]);
+  for (let i = 1; i < SWASH_N; i++) ctx.lineTo(i * SWASH_STEP, visY[i]);
   ctx.lineTo(SW, SH);
   ctx.lineTo(0, SH);
   ctx.closePath();
 }
 
+// Dark, glossy sand where a wave has just been, plus the thin foam line it strands as it retreats.
+function drawWetSand() {
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(0, wetY[0]);
+  for (let i = 1; i < SWASH_N; i++) ctx.lineTo(i * SWASH_STEP, wetY[i]);
+  for (let i = SWASH_N - 1; i >= 0; i--) ctx.lineTo(i * SWASH_STEP, visY[i] + 3);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(72,52,28,0.36)'; ctx.fill();
+  ctx.fillStyle = 'rgba(170,215,235,0.11)'; ctx.fill();   // sky sheen on the wet surface
+  ctx.lineCap = 'round';
+  for (let i = 0; i < SWASH_N - 1; i++) {
+    if (visY[i] - wetY[i] < 3) continue;
+    const a = 0.55 - wetAge[i] / 150;
+    if (a <= 0.02) continue;
+    const n = noise2(i * 0.37, 3.3);
+    if (n < -0.2) continue;
+    ctx.strokeStyle = 'rgba(240,250,255,' + a.toFixed(2) + ')';
+    ctx.lineWidth = 1 + (n + 0.3) * 2;
+    ctx.beginPath();
+    ctx.moveTo(i * SWASH_STEP, wetY[i] + 1);
+    ctx.lineTo((i + 1) * SWASH_STEP, wetY[i + 1] + 1);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function drawOceanOverlay() {
+  drawWetSand();
   buildShorelinePath();
   ctx.save();
   ctx.clip();
-  ctx.drawImage(wCanvas, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(wCanvas, 0, 0, SW, SH);
   ctx.restore();
 }
 
@@ -698,43 +1046,52 @@ function shoreYAtScreenX(sx) {
 // tile diamond. Path-stroke + a handful of arcs only — no per-pixel work.
 // Bright continuous ribbon, not scattered dots: the strokes carry the
 // shoreline, the blobs are just occasional flecks on top of it.
-const FOAM_LINES = [
-  { alpha: 0.55, width: 5, yOff: 0 },
-  { alpha: 0.7,  width: 3, yOff: 2 },
-  { alpha: 0.85, width: 2, yOff: 4 },
-];
-
 function drawShoreFoamBand(t) {
-  const STEP = 40;
-  const xs = [];
-  for (let sx = 0; sx < SW; sx += STEP) xs.push(sx);
-  xs.push(SW);
-
+  const z = TH() / 28;
   ctx.save();
-  ctx.lineCap = 'round';
-  FOAM_LINES.forEach((line, i) => {
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  // soft underlay
+  ctx.beginPath();
+  ctx.moveTo(0, visY[0] + 3 * z);
+  for (let i = 1; i < SWASH_N; i++) ctx.lineTo(i * SWASH_STEP, visY[i] + 3 * z);
+  ctx.strokeStyle = 'rgba(235,250,255,0.34)';
+  ctx.lineWidth = 9 * z;
+  ctx.stroke();
+  // crisp leading edge: thicker where the water is advancing, with gaps so it is never one even ribbon
+  for (let i = 0; i < SWASH_N - 1; i++) {
+    const n = noise2(i * 0.21 + t * 0.004, 7.7);
+    if (n < -0.38) continue;
+    const adv = Math.min(4, Math.max(0, prevVisY[i] - visY[i]));
+    ctx.strokeStyle = 'rgba(248,253,255,' + Math.min(0.97, 0.7 + adv * 0.3 + n * 0.2).toFixed(2) + ')';
+    ctx.lineWidth = (2.0 + adv * 2.4 + (n + 0.5) * 2.4 + Math.min(9, pressed[i] * 0.12)) * z;
     ctx.beginPath();
-    xs.forEach((sx, idx) => {
-      const wobble = Math.sin(sx*0.04 + t*0.04 + i*2.3) * 3
-                   + Math.sin(sx*0.11 - t*0.07 + i*5.1) * 1.5;
-      const y = shoreYAtScreenX(sx) + line.yOff + wobble;
-      if (idx === 0) ctx.moveTo(sx, y); else ctx.lineTo(sx, y);
-    });
-    ctx.strokeStyle = `rgba(230,248,255,${line.alpha})`;
-    ctx.lineWidth = line.width;
+    ctx.moveTo(i * SWASH_STEP, visY[i]);
+    ctx.lineTo((i + 1) * SWASH_STEP, visY[i + 1]);
     ctx.stroke();
-  });
-
-  // Occasional flecks just on the water side, not popcorn: fewer, smaller,
-  // flattened, and hugging the shoreline curve (within ~6px).
-  for (let sx = 0; sx < SW; sx += 65) {
-    const pulse = Math.sin(t*0.07 + sx*1.1) * 0.5 + 0.5;
-    if (pulse < 0.4) continue; // sparse, not every sample point
-    const rx = 2 + pulse * 2;
-    ctx.globalAlpha = 0.5 + pulse * 0.45;
-    ctx.fillStyle = '#d8f2ff';
+  }
+  // spray thrown up where a wave is pressing against the castle / defences
+  ctx.fillStyle = '#f4fbff';
+  for (let i = 0; i < SWASH_N; i++) {
+    if (pressed[i] < 6) continue;
+    const k = Math.min(1, pressed[i] / (TH() * 1.2));
+    for (let s = 0; s < 2; s++) {
+      const n = noise2(i * 1.7 + s * 9.3, t * 0.11 + s);
+      if (n < 0) continue;
+      ctx.globalAlpha = 0.35 + n * 0.6;
+      ctx.beginPath();
+      ctx.arc(i * SWASH_STEP + (n - 0.2) * 14, visY[i] - (2 + n * 22 * k) * z, (1 + n * 2.6) * z, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+  // bubbles trailing just behind the edge
+  ctx.fillStyle = '#e6f6ff';
+  for (let i = 0; i < SWASH_N; i += 2) {
+    const n = noise2(i * 0.5, t * 0.012);
+    if (n < 0.08) continue;
+    ctx.globalAlpha = 0.35 + n * 0.9;
     ctx.beginPath();
-    ctx.ellipse(sx, shoreYAtScreenX(sx) + 2 + pulse*4, rx, rx*0.5, 0, 0, Math.PI*2);
+    ctx.ellipse(i * SWASH_STEP + n * 11, visY[i] + (5 + n * 16) * z, (1.4 + n * 4.5) * z, (0.8 + n * 2.2) * z, 0, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.globalAlpha = 1;
@@ -745,47 +1102,48 @@ function drawCastle(t) {
   const BC = 3, BR = 3;
 
   for(let dc=0;dc<4;dc++) for(let dr=0;dr<4;dr++)
-    isoBlock(BC+dc,BR+dr,0,0.4,'#dab84a','#b89030','#906810');
+    castleBlock(BC+dc,BR+dr,0,0.4,'#dab84a','#b89030','#906810');
 
   for(let i=0;i<4;i++){
-    isoBlock(BC+i, BR,   0.4,0.5,'#d0a840','#a88228','#806010');
-    isoBlock(BC+i, BR+3, 0.4,0.5,'#d0a840','#a88228','#806010');
-    isoBlock(BC,   BR+i, 0.4,0.5,'#d0a840','#a88228','#806010');
-    isoBlock(BC+3, BR+i, 0.4,0.5,'#d0a840','#a88228','#806010');
+    castleBlock(BC+i, BR,   0.4,0.5,'#d0a840','#a88228','#806010');
+    castleBlock(BC+i, BR+3, 0.4,0.5,'#d0a840','#a88228','#806010');
+    castleBlock(BC,   BR+i, 0.4,0.5,'#d0a840','#a88228','#806010');
+    castleBlock(BC+3, BR+i, 0.4,0.5,'#d0a840','#a88228','#806010');
   }
 
   [[BC,BR],[BC+3,BR],[BC,BR+3],[BC+3,BR+3]].forEach(([c,r])=>{
-    isoBlock(c,r,0.4,0.5,'#dab848','#b89030','#906810');
-    isoBlock(c,r,0.9,0.5,'#dab848','#b89030','#906810');
-    isoBlock(c,r,1.4,0.5,'#dab848','#b89030','#906810');
-    isoBlock(c+0.1, r+0.1, 1.9,0.35,'#e0c050','#c0a030','#907010');
-    isoBlock(c+0.55,r+0.1, 1.9,0.35,'#e0c050','#c0a030','#907010');
-    isoBlock(c+0.1, r+0.55,1.9,0.35,'#e0c050','#c0a030','#907010');
+    castleBlock(c,r,0.4,0.5,'#dab848','#b89030','#906810');
+    castleBlock(c,r,0.9,0.5,'#dab848','#b89030','#906810');
+    castleBlock(c,r,1.4,0.5,'#dab848','#b89030','#906810');
+    castleBlock(c+0.1, r+0.1, 1.9,0.35,'#e0c050','#c0a030','#907010');
+    castleBlock(c+0.55,r+0.1, 1.9,0.35,'#e0c050','#c0a030','#907010');
+    castleBlock(c+0.1, r+0.55,1.9,0.35,'#e0c050','#c0a030','#907010');
   });
 
   for(let i=1;i<3;i++){
-    isoBlock(BC+i,BR,  0.9,0.35,'#dabb48','#b89030','#906810');
-    isoBlock(BC+i,BR+3,0.9,0.35,'#dabb48','#b89030','#906810');
-    isoBlock(BC,  BR+i,0.9,0.35,'#dabb48','#b89030','#906810');
-    isoBlock(BC+3,BR+i,0.9,0.35,'#dabb48','#b89030','#906810');
+    castleBlock(BC+i,BR,  0.9,0.35,'#dabb48','#b89030','#906810');
+    castleBlock(BC+i,BR+3,0.9,0.35,'#dabb48','#b89030','#906810');
+    castleBlock(BC,  BR+i,0.9,0.35,'#dabb48','#b89030','#906810');
+    castleBlock(BC+3,BR+i,0.9,0.35,'#dabb48','#b89030','#906810');
   }
 
-  isoBlock(BC+1,BR+1,0.4,0.5,'#e0c050','#c0a030','#907010');
-  isoBlock(BC+2,BR+1,0.4,0.5,'#e0c050','#c0a030','#907010');
-  isoBlock(BC+1,BR+2,0.4,0.5,'#e0c050','#c0a030','#907010');
-  isoBlock(BC+2,BR+2,0.4,0.5,'#e0c050','#c0a030','#907010');
-  isoBlock(BC+1,BR+1,0.9,0.5,'#e8c855','#c8a835','#987515');
-  isoBlock(BC+2,BR+1,0.9,0.5,'#e8c855','#c8a835','#987515');
-  isoBlock(BC+1,BR+2,0.9,0.5,'#e8c855','#c8a835','#987515');
-  isoBlock(BC+2,BR+2,0.9,0.5,'#e8c855','#c8a835','#987515');
-  isoBlock(BC+1,BR+1,1.4,0.6,'#f0d060','#d0b040','#a08020');
-  isoBlock(BC+2,BR+2,1.4,0.6,'#f0d060','#d0b040','#a08020');
+  castleBlock(BC+1,BR+1,0.4,0.5,'#e0c050','#c0a030','#907010');
+  castleBlock(BC+2,BR+1,0.4,0.5,'#e0c050','#c0a030','#907010');
+  castleBlock(BC+1,BR+2,0.4,0.5,'#e0c050','#c0a030','#907010');
+  castleBlock(BC+2,BR+2,0.4,0.5,'#e0c050','#c0a030','#907010');
+  castleBlock(BC+1,BR+1,0.9,0.5,'#e8c855','#c8a835','#987515');
+  castleBlock(BC+2,BR+1,0.9,0.5,'#e8c855','#c8a835','#987515');
+  castleBlock(BC+1,BR+2,0.9,0.5,'#e8c855','#c8a835','#987515');
+  castleBlock(BC+2,BR+2,0.9,0.5,'#e8c855','#c8a835','#987515');
+  castleBlock(BC+1,BR+1,1.4,0.6,'#f0d060','#d0b040','#a08020');
+  castleBlock(BC+2,BR+2,1.4,0.6,'#f0d060','#d0b040','#a08020');
 
   const gp = iso(BC+1.5, BR, 0.4);
   ctx.fillStyle='#1a1000';
   ctx.beginPath();ctx.ellipse(gp.x-2,gp.y+2,8,13,0,Math.PI,0);ctx.fill();
   ctx.fillRect(gp.x-10,gp.y+2,16,10);
 
+  if (castleCutZ() < 2.3) return;   // flags are the first thing to go
   drawIsoFlag(BC,   BR,   1.95,'#cc2020',t);
   drawIsoFlag(BC+3, BR,   1.95,'#d4a010',t);
   drawIsoFlag(BC,   BR+3, 1.95,'#cc2020',t);
@@ -819,10 +1177,12 @@ function drawMoat(t) {
   moatTiles.forEach(([c,r])=>{
     ctx.save();
     clipTilePath(c,r); ctx.clip();
-    ctx.drawImage(wCanvas,0,0);
+    ctx.fillStyle='#a8823f'; ctx.fill();                       // dry trench floor
+    ctx.fillStyle='rgba(60,40,15,' + (0.24 + 0.22 * ringDamp).toFixed(2) + ')'; ctx.fill();   // darker while damp
     ctx.restore();
-    const pulse = Math.sin(t*0.06+c*0.7+r*0.5)*0.5+0.5;
-    drawTileTop(c,r,`rgba(200,240,255,${0.15+pulse*0.15})`);
+    // the water reaches the far tiles last: delay each tile by its distance from the sea-side corner
+    const tileCover = Math.max(0, Math.min(1, (ringCover - 0.65 * (Math.abs(c - 7) + Math.abs(r - 7)) / 10) / 0.35));
+    drawPoolOnTile(c, r, tileCover, ringDepth, '#6fd0e2', '#3fa6c8');
   });
 }
 
@@ -1832,7 +2192,9 @@ function drawPlacedPieces() {
       ctx.globalAlpha = 0.4 + Math.sin(tick * 0.18) * 0.25;
     }
 
+    pieceDrawHealth = p.health;
     drawPlacedPiece(p.id, p.col, p.row, state);
+    pieceDrawHealth = 100;
 
     // Damage overlay tint
     if (state === 'damaged' || state === 'crumbling') {
@@ -1945,26 +2307,29 @@ function drawHealthMeter(p) {
 }
 
 function drawPlacedPiece(id, col, row, state) {
+  // v0.9: walls melt - cut off above a height that drops with the piece's health (ghost previews draw at full height)
+  const _fullH = { 'wall-small': 0.6, 'wall-medium': 1.38, 'wall-tall': 1.9 }[id];
+  meltCutZ = _fullH ? _fullH * (0.22 + 0.78 * pieceDrawHealth / 100) : 1e9;
   switch(id) {
     case 'wall-small':
-      isoBlock(col,row, 0,0.1,'#dab84a','#b89030','#906810');
-      isoBlock(col,row, 0.1,0.5,'#d0a840','#a88228','#806010');
+      meltBlock(col,row, 0,0.1,'#dab84a','#b89030','#906810');
+      meltBlock(col,row, 0.1,0.5,'#d0a840','#a88228','#806010');
       break;
     case 'wall-medium':
-      isoBlock(col,row, 0,0.1,'#dab84a','#b89030','#906810');
-      isoBlock(col,row, 0.1,0.5,'#d0a840','#a88228','#806010');
-      isoBlock(col,row, 0.6,0.5,'#d0a840','#a88228','#806010');
-      isoBlock(col+0.05,row+0.05, 1.1,0.28,'#dabb48','#b89030','#906810');
-      isoBlock(col+0.55,row+0.05, 1.1,0.28,'#dabb48','#b89030','#906810');
+      meltBlock(col,row, 0,0.1,'#dab84a','#b89030','#906810');
+      meltBlock(col,row, 0.1,0.5,'#d0a840','#a88228','#806010');
+      meltBlock(col,row, 0.6,0.5,'#d0a840','#a88228','#806010');
+      meltBlock(col+0.05,row+0.05, 1.1,0.28,'#dabb48','#b89030','#906810');
+      meltBlock(col+0.55,row+0.05, 1.1,0.28,'#dabb48','#b89030','#906810');
       break;
     case 'wall-tall':
-      isoBlock(col,row, 0,0.1,'#dab84a','#b89030','#906810');
-      isoBlock(col,row, 0.1,0.5,'#d0a840','#a88228','#806010');
-      isoBlock(col,row, 0.6,0.5,'#d0a840','#a88228','#806010');
-      isoBlock(col,row, 1.1,0.5,'#d0a840','#a88228','#806010');
-      isoBlock(col+0.05,row+0.05, 1.6,0.3,'#e0c050','#c0a030','#907010');
-      isoBlock(col+0.55,row+0.05, 1.6,0.3,'#e0c050','#c0a030','#907010');
-      isoBlock(col+0.05,row+0.55, 1.6,0.3,'#e0c050','#c0a030','#907010');
+      meltBlock(col,row, 0,0.1,'#dab84a','#b89030','#906810');
+      meltBlock(col,row, 0.1,0.5,'#d0a840','#a88228','#806010');
+      meltBlock(col,row, 0.6,0.5,'#d0a840','#a88228','#806010');
+      meltBlock(col,row, 1.1,0.5,'#d0a840','#a88228','#806010');
+      meltBlock(col+0.05,row+0.05, 1.6,0.3,'#e0c050','#c0a030','#907010');
+      meltBlock(col+0.55,row+0.05, 1.6,0.3,'#e0c050','#c0a030','#907010');
+      meltBlock(col+0.05,row+0.55, 1.6,0.3,'#e0c050','#c0a030','#907010');
       break;
     case 'moat-shallow':
     case 'moat-standard':
@@ -1979,13 +2344,20 @@ function drawPlacedPiece(id, col, row, state) {
         'moat-deep':    ['#193a58','#0a1e30'],
       };
       const [c1,c2] = colors[id];
-      const g = ctx.createLinearGradient(p.x,p.y,pb.x,pb.y);
-      g.addColorStop(0,c1); g.addColorStop(1,c2);
-      ctx.fillStyle=g; ctx.beginPath();
+      // v0.9: a moat is a dry trench until the surge fills it (p.fill 0..1), then it drains
+      const mp = placedPieces.find(q => q.col === col && q.row === row);
+      const mCover = mp && mp.cover ? mp.cover : 0, mDepth = mp && mp.depth ? mp.depth : 0, mDamp = mp && mp.damp ? mp.damp : 0;
+      const mFill = Math.min(mCover, mDepth) > 0.05 ? 1 : 0;
+      const dry = { 'moat-shallow': ['#b08a48','#96743a'], 'moat-standard': ['#9c7838','#7c5c28'], 'moat-deep': ['#84622c','#5c421a'] }[id];
+      const gd = ctx.createLinearGradient(p.x,p.y,pb.x,pb.y);
+      gd.addColorStop(0,dry[0]); gd.addColorStop(1,dry[1]);
+      ctx.fillStyle=gd; ctx.beginPath();
       ctx.moveTo(p.x,p.y);ctx.lineTo(pr.x,pr.y);ctx.lineTo(pb.x,pb.y);ctx.lineTo(pf.x,pf.y);
       ctx.closePath();ctx.fill();
-      // Shimmer line
-      ctx.strokeStyle='rgba(140,210,255,0.35)'; ctx.lineWidth=1;
+      if (mDamp > 0) { ctx.fillStyle = 'rgba(50,32,10,' + (0.3 * mDamp).toFixed(2) + ')'; ctx.fill(); }   // damp floor after it drains
+      drawPoolOnTile(col, row, mCover, mDepth, c1, c2);
+      // Shimmer line (trench rim when dry)
+      ctx.strokeStyle = mFill > 0.05 ? 'rgba(140,210,255,0.35)' : 'rgba(60,40,15,0.45)'; ctx.lineWidth=1;
       ctx.beginPath();
       ctx.moveTo(p.x,p.y);ctx.lineTo(pr.x,pr.y);ctx.lineTo(pb.x,pb.y);ctx.lineTo(pf.x,pf.y);
       ctx.closePath();ctx.stroke();
@@ -2202,6 +2574,7 @@ let waveSpawnsRemaining = 0;
 
 function startWave() {
   wavePhase = 'defend';
+  bigWaveTimer = BIGWAVE_FIRST;
   waveSpawnsRemaining = waveBudget();
   // Reset spawn timers; pre-seed bird so one appears immediately on wave start
   crabSpawnTimer = 0; touristSpawnTimer = 0;
@@ -2357,6 +2730,8 @@ canvas.addEventListener('click', e => {
   coins = 0;
   truckCooldown = 0;
   healthPeekCol = -1; healthPeekRow = -1; healthPeekTimer = 0;
+  bigWave = null; bigWaveTimer = BIGWAVE_FIRST; bigWaveWarn = 0;
+  ringCover = 0; ringDepth = 0; ringDamp = 0; ringFeed = 0; castleShown = CASTLE_MAX_HP;
   selectedCounter = null;
   document.querySelectorAll('.counter-btn.selected').forEach(b => b.classList.remove('selected'));
 });
@@ -2380,6 +2755,8 @@ canvas.addEventListener('touchend', e => {
   coins = 0;
   truckCooldown = 0;
   healthPeekCol = -1; healthPeekRow = -1; healthPeekTimer = 0;
+  bigWave = null; bigWaveTimer = BIGWAVE_FIRST; bigWaveWarn = 0;
+  ringCover = 0; ringDepth = 0; ringDamp = 0; ringFeed = 0; castleShown = CASTLE_MAX_HP;
   selectedCounter = null;
   document.querySelectorAll('.counter-btn.selected').forEach(b => b.classList.remove('selected'));
 });
@@ -3401,7 +3778,8 @@ function render() {
     if (waveRings[i].alpha <= 0) waveRings.splice(i, 1);
   }
 
-  if(tick%3===0) buildWaterTex(tick*0.011);
+  updateSwash(tick);
+  if(tick%2===0) buildWaterTex(tick*0.011);
 
   ctx.clearRect(0,0,SW,SH);
   drawBackdrop();
@@ -3421,13 +3799,11 @@ function render() {
       // gameplay below) — drawOceanOverlay() paints the water on top after
       // this loop, along one continuous screen-space curve instead of a
       // per-tile stair-step.
-      const wet = isShore(col,row);
+      // v0.9: no per-tile shore tint - it showed through the clear shallows as a diamond stair-step.
+      // drawWetSand() darkens the sand along the real water edge instead.
       ctx.save();
       clipTilePath(col,row); ctx.clip();
       ctx.drawImage(sCanvas,0,0);
-      if(wet){
-        ctx.fillStyle='rgba(40,80,120,0.22)'; ctx.fill();
-      }
       ctx.restore();
 
       waveRings.forEach(ring=>{
@@ -3446,9 +3822,7 @@ function render() {
         ctx.restore();
       });
 
-      if(isShore(col,row)){
-        drawFoamOnTile(col,row,tick);
-      }
+      // v0.9: per-tile foam dots removed - drawShoreFoamBand() carries the foam along the real edge
     }  // end allTiles loop
 
   drawOceanOverlay();      // ← smooth screen-space waterline over every tile
@@ -3456,6 +3830,7 @@ function render() {
   drawMoat(tick);
   drawCastle(tick);
   tickDeterioration();  // ← decay placed pieces each frame
+  tickSurge();          // ← big-wave schedule + damage, moat fill/drain
 
   if (!gameOver) {
     tickEnemies();      // ← move + attack enemies
@@ -3468,6 +3843,7 @@ function render() {
   drawTruck();            // ← cleaner truck, if active
   drawLightningStrikes(); // ← countermeasure bolt animations
   drawCastleHUD();        // ← castle HP bar upper-left
+  drawBigWaveWarning();   // ← 'BIG WAVE!' banner while one is coming
   if (!gameOver && wavePhase === 'build') drawWaveButton();
 
   if (gameOver) {

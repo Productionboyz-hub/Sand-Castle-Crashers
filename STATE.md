@@ -1,5 +1,29 @@
 # STATE
 
+## STATE - 2026-11-12
+Live: unchanged (v0.8.10). No deploy this session. Golden unchanged.
+New branch: feature/water-v3 - water v3 (realistic water + big waves).
+  NOT merged, NOT deployed. Held off main so the efba0f1 device pass
+  (#2) stays bisectable. Merge only after that pass is green.
+What it is: prototype built in a soccer-app session (handoff commit
+  e9868e9), approved by J from preview clips, then two fixes here:
+  phone water was blocky (pattern scale floored, finer texture on small
+  screens) and the tile grid showed through the clear shallows
+  (per-tile isShore tint removed). Scripts + tests now live in
+  tools/water-v3/ - this repo no longer depends on the soccer repo.
+Verification (headless only - NOT a device pass):
+  test_surge3.cjs 15/15 PASS on branch, FAILS on main (expected).
+  probe_block.cjs PASS on branch, FAILED on pre-fix v3 (iPhone 2.47 -> 1.47
+  vs desktop ~1.2). probe_grid.cjs PASS on branch (0.88), FAILED on
+  pre-fix v3 (2.8). In-repo scripts rebuild the committed file from main
+  byte-for-byte.
+GAME_VER still reads v0.8.10 on the branch - bump at merge/deploy time.
+Backlog changes: opened #17 (damp-band hard edge), #18 (water v3 open
+  items).
+NEXT ACTION: unchanged from 2026-07-24 (deploy + device pass for efba0f1).
+  Then: device pass of feature/water-v3 on iPad + iPhone (portrait),
+  covering #18, before merging.
+
 ## STATE - 2026-07-24
 Live: v0.8.10 (commit 7e8f335 game build), deploy receipt re-verified from
 NEW repo path: YES (two stamps, both 606c0c5 - the docs-only HEAD).
@@ -216,6 +240,25 @@ Known-good before this session: 5b5373b.
     NOT deployed - held out of the in-flight device pass sequence so
     a red result stays bisectable.
     Status: fixed-unverified
+
+#17 [LOW] Damp-sand band has a hard bottom edge
+    The baked damp band (sandcastle_iso2.html ~line 468, dampGrad) fades
+    in from transparent to 0.18 and then stops dead at MEAN_WATERLINE_Y,
+    leaving a straight horizontal line across the sand at low tide.
+    Present on main (confirmed by screenshot 2026-11-12); water v3's
+    clear shallows and wet sand make it more noticeable.
+    Likely fix: fade the band out below MEAN_WATERLINE_Y too.
+    Status: open - separate change, not part of water v3.
+
+#18 [MED] Water v3 - unverified areas (branch feature/water-v3)
+    Not yet checked: portrait phones on a real device, pinch zoom, high
+    tide against the castle walls, frame rate on iPad/iPhone.
+    Balance numbers are first guesses (named constants, TUNE markers):
+    BIGWAVE_MOAT_DMG 34, BIGWAVE_WALL_DMG 40, BIGWAVE_CASTLE_HITS 3,
+    BIGWAVE_GAP_MIN/MAX 700-1500 ticks (~12-25 s), BIGWAVE_FIRST 480.
+    Old per-tile foam dots removed (they showed as stripes in the
+    shallows); foam now only along the real water edge.
+    Status: open - needs coach device pass before merge.
 
 ## Deviations from WORKFLOW, accepted
 - sec.3 src/dist split not done. Project is a working single-file monolith at
