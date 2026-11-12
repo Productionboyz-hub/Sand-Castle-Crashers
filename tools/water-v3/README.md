@@ -12,6 +12,7 @@ soccer-app repo, where the prototype was first built (handoff commit e9868e9).
 | `patch_water3.py` | Applied on top of patch 2. Surge stops at the moat/castle, moats and castle ring pour in and dry up, walls and castle melt with health, more slosh. |
 | `patch_water4.py` | Applied on top of patch 3. Phone fix (water was blocky: pattern scale floored, finer texture on small screens) and removal of the per-tile shore tint that showed the tile grid through the clear shallows. |
 | `patch_water5.py` | Applied on top of patch 4. No "BIG WAVE!" banner; waves enter from one side, cross to the other and fan out; random wave speeds; backwash from a retreating wave slows an incoming one. Each wave runs on its own clock (`w.p`). |
+| `patch_water6.py` | Applied on top of patch 5. Stronger see-saw pitch (`SWASH_PITCH`), wider fan-out (`SWASH_FAN_MIN/MAX`), faster sideways slosh. |
 | `test_surge3.cjs` | 15 Playwright gameplay checks (moat/wall/castle damage, barrier, pour, dry, melt, build-phase safety). |
 | `probe_block.cjs` | Fails if phone water is much blockier than desktop. |
 | `probe_grid.cjs` | Fails if the tile grid shows through the shallows. |
@@ -25,9 +26,10 @@ python3 patch_water2.py main.html v2.html
 python3 patch_water3.py v2.html v3.html
 python3 patch_water4.py v3.html v4.html
 python3 patch_water5.py v4.html v5.html
+python3 patch_water6.py v5.html v6.html
 ```
 
-`v5.html` is identical to `sandcastle_iso2.html` on the branch, byte for byte.
+`v6.html` is identical to `sandcastle_iso2.html` on the branch, byte for byte.
 (Use bash for the `git show ... >` step: PowerShell's `>` re-encodes the bytes.)
 
 ## Running the tests (needs Node + Playwright)
@@ -43,4 +45,5 @@ node probe_waves.cjs http://127.0.0.1:PORT/
 
 Each exits 0 on pass and 1 on fail. `test_surge3.cjs` fails on main (no wave
 system there); the block and grid probes failed on the pre-fix v3 build;
-`probe_waves.cjs` failed 5 of 7 checks on the build before patch 5.
+`probe_waves.cjs` failed 5 of its checks on the build before patch 5, and its
+pitch/fan-out strength checks (W7, W8) failed on the build before patch 6.

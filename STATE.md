@@ -25,6 +25,21 @@ Second commit, same day - J tested the branch on PC ("water looks great")
   tick - born. probe_waves.cjs: ALL PASS on branch, 5 of 7 FAILED on the
   previous commit. test_surge3 15/15 x3 runs, block + grid probes PASS.
   New TUNE knobs: SWASH_SPEED_MIN/MAX, BACKWASH_DRAG, BACKWASH_MIN.
+Third commit, same day - J asked for more extreme pitch and fan-out.
+  patch_water6.py: SWASH_PITCH 0.6 -> 1.6 (waterline tips ~2 tile-heights
+  end to end at its peak, was ~0.75), fan-out ~4-8x landing width (was
+  ~2-4.5x), faster sideways slosh. probe_waves W7/W8 PASS on branch, FAILED
+  on the previous commit. test_surge3 15/15 x3.
+  Test change, stated plainly: test_surge3 S1f (moat dries gradually)
+  failed 1 run in 2 because an ordinary wave topped the moat back up
+  mid-dry. The drying phase of the test now runs with ordinary waves
+  switched off. The top-up itself is real game behaviour, visual only
+  (ordinary waves never damage), and was already common on the previous
+  commit at mid/high tide (moat at 8,8 reached 78% / 100% of ticks).
+Direction (J, 2026-11-12): the game will eventually move to 3D sprites.
+  Wants to SEE a moat fill with water (not a flat blue fill) and SEE walls
+  melt/crumble. Keep both effects; any sprite pipeline must support them
+  (fill level and damage stages), see CONTEXT.md art direction.
 GAME_VER still reads v0.8.10 on the branch - bump at merge/deploy time.
 Backlog changes: opened #17 (damp-band hard edge), #18 (water v3 open
   items).

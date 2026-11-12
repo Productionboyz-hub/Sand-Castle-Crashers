@@ -526,6 +526,9 @@ const SWASH_SPEED_MIN = 0.45;     // slowest wave (1 = the old fixed pace)
 const SWASH_SPEED_MAX = 2.1;      // fastest wave
 const BACKWASH_DRAG   = 0.55;     // how hard retreating water slows a wave running up into it
 const BACKWASH_MIN    = 0.3;      // an incoming wave never drops below this fraction of its speed
+const SWASH_PITCH     = 1.6;      // see-saw: how far the waterline tips end to end (tile-heights; 0.6 = the old gentle rock)
+const SWASH_FAN_MIN   = 3;        // a wave ends at least this many times wider than it landed (plus 1)
+const SWASH_FAN_MAX   = 7;        // ...and at most this many
 let bigWaveTimer = BIGWAVE_FIRST;
 let ringCover = 0, ringDepth = 0, ringDamp = 0, ringFeed = 0; // castle ring: how far the water has poured round, how deep, how damp (drawing only)
 let castleShown = 100;            // castle health as DRAWN - eases toward castleHP so the castle melts instead of popping
@@ -546,10 +549,10 @@ function spawnSwashWave() {
     amp: th * (0.35 + Math.random() * 0.85) * (big ? 1.6 : 1),          // up to ~2 tiles of run-up
     rise: 30 + Math.random() * 40, fall: 80 + Math.random() * 150,
     seed: Math.random() * 100,
-    dir, v: 2.5 + Math.random() * 5,                                    // sideways travel, px per (speed-1) tick
+    dir, v: 3.5 + Math.random() * 7.5,                                  // sideways travel, px per (speed-1) tick
     x0: dir > 0 ? SW * (-0.12 + Math.random() * 0.4) : SW * (1.12 - Math.random() * 0.4),   // starts on its entry side
-    sig: SW * (0.07 + Math.random() * 0.12),                           // narrow where it lands...
-    fan: 1.2 + Math.random() * 2.3,                                     // ...and this many times wider by the time it is gone
+    sig: SW * (0.05 + Math.random() * 0.09),                           // narrow where it lands...
+    fan: SWASH_FAN_MIN + Math.random() * (SWASH_FAN_MAX - SWASH_FAN_MIN), // ...and this many times wider by the time it is gone
     base: Math.random() * 0.15,
   });
   swashNext = (tick | 0) + (Math.random() < 0.3 ? 12 + Math.random() * 30 : 50 + Math.random() * 170); // sometimes a quick double
@@ -620,7 +623,7 @@ function updateSwash(tk) {
   }
   buildBarrier();
   // see-saw: the whole waterline rocks, one end up while the other goes down
-  const tilt = Math.sin(tk * 0.021 + tiltPhase) * th * 0.6 * (noise2(tk * 0.003, 9.1) + 0.7);
+  const tilt = Math.sin(tk * 0.021 + tiltPhase) * th * SWASH_PITCH * (noise2(tk * 0.003, 9.1) + 0.7);
   for (let i = 0; i < SWASH_N; i++) {
     const sx = i * SWASH_STEP;
     let run = 0;
