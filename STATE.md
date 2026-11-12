@@ -40,6 +40,30 @@ Direction (J, 2026-11-12): the game will eventually move to 3D sprites.
   Wants to SEE a moat fill with water (not a flat blue fill) and SEE walls
   melt/crumble. Keep both effects; any sprite pipeline must support them
   (fill level and damage stages), see CONTEXT.md art direction.
+Fourth commit, same day - two more asks from J after watching it:
+  (a) waves looked like "piano keys pressed left to right" - each wave was
+  a bump travelling sideways. patch_water7.py: waves are POURED - land at
+  one spot, the front slides along the beach, thins, the sheet behind
+  stays up then drains; foam/streaks/flecks in the thin water are carried
+  sideways (flowPh, drawing only). (b) patch_water8.py: wave SIZE matters.
+  Small wave part-fills a moat and it dries in ~1 s; big wave fills it and
+  it dries in ~8 s. Ordinary waves now do a LITTLE damage, defend phase
+  only, same locked chain (moat -> nearest sea-side wall -> castle),
+  scaled by size: max 4 to a moat or wall (a big wave does 34 / 40), and
+  0.34 of a castle hit (accrued in swashCastleDebt, paid via
+  damageCastle()). Big-wave damage unchanged.
+  DESIGN CHANGE: ordinary swash is no longer drawing-only.
+  New persistent state swashCastleDebt and ringK are in BOTH restart
+  handlers' reset lists.
+  Measured (headless, 60 s of defend, no big waves): low and mid tide
+  ordinary waves never reach a piece at (8,8); at high tide a moat or wall
+  there loses roughly 12-22 health a minute.
+  Tests: probe_sizes.cjs ALL PASS (5 of 7 FAIL without patch 8);
+  probe_waves ALL PASS (pour checks W9/W10 FAIL without patch 7);
+  test_surge3 15/15; block + grid PASS. Test isolation, stated plainly:
+  test_surge3 now switches ordinary waves off during its big-wave
+  scenarios (they do damage now) and holds off the next big wave while it
+  watches the moat dry.
 GAME_VER still reads v0.8.10 on the branch - bump at merge/deploy time.
 Backlog changes: opened #17 (damp-band hard edge), #18 (water v3 open
   items).
@@ -281,6 +305,9 @@ Known-good before this session: 5b5373b.
     BIGWAVE_GAP_MIN/MAX 700-1500 ticks (~12-25 s), BIGWAVE_FIRST 480.
     Old per-tile foam dots removed (they showed as stripes in the
     shallows); foam now only along the real water edge.
+    Ordinary-wave damage numbers (SWASH_MOAT_DMG 4, SWASH_WALL_DMG 4,
+    SWASH_CASTLE_HITS 0.34) and moat dry times (MOAT_DRY_SMALL/BIG) are
+    first guesses - needs play-testing across a full tide cycle.
     Big waves now arrive with no banner (J's call) - check on device
     that the draw-back before the surge is enough of a tell. Wave feel
     knobs (SWASH_SPEED_MIN/MAX, BACKWASH_DRAG/MIN) are first guesses.

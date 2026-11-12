@@ -435,6 +435,7 @@ function buildWaterTex(t) {
   for (let x = 0; x < WW; x++) {
     const sx = x * W_SCALE;
     const edgeY = visShoreYAt(sx);            // where the water actually is right now (with surge)
+    const wxf = (sx - swashLerp(flowPh, sx)) / th;   // x for anything floating on the thin sheet (carried sideways)
     const tideY = baseShoreYAt(sx);           // the tide line the surge runs up from
     const y0 = Math.max(0, Math.floor(edgeY / W_SCALE) - 1);
     for (let y = 0; y < y0; y++) data[(y * WW + x) * 4 + 3] = 0;
@@ -476,12 +477,14 @@ function buildWaterTex(t) {
       r += shade * 0.5 + light * 0.85; g += shade * 0.8 + light * 0.95; b += shade + light;
       let a = 0.40 + 0.60 * Math.min(1, dp / (th * 1.5));
       if (dp === 0) {                         // run-up sheet: thin, streaky water sliding over the sand
-        const streak = noise2(wx * 0.7 + t * 0.3, wy * 3.4 + t * 1.1);
+        const streak = noise2(wxf * 0.7 + t * 0.3, wy * 3.4 + t * 1.1);
         a = 0.36 + streak * 0.14;
         if (streak > 0.18) { const f = (streak - 0.18) * 1.5; r += (255 - r) * f; g += (255 - g) * f; b += (255 - b) * f; a += f * 0.4; }
+        const fleck = noise2(wxf * 2.6 + 17.3, wy * 2.6 + t * 0.35);      // foam flecks riding the sheet: these show the sideways slide
+        if (fleck > 0.26) { const f = Math.min(0.85, (fleck - 0.26) * 3); r += (255 - r) * f; g += (255 - g) * f; b += (255 - b) * f; a += f * 0.45; }
       }
       if (dv < band) {
-        const lace = noise2(wx * 2.3 + t * 0.5, wy * 4.2 + t * 0.9);
+        const lace = noise2(wxf * 2.3 + t * 0.5, wy * 4.2 + t * 0.9);
         const f = (1 - dv / band) * (lace > -0.05 ? 0.78 : 0.16);
         r += (255 - r) * f; g += (255 - g) * f; b += (255 - b) * f;
         if (f > a) a = f;
@@ -508,6 +511,7 @@ const wetY = new Float32Array(SWASH_N), wetAge = new Float32Array(SWASH_N);
 const rawY = new Float32Array(SWASH_N);      // where the surge WOULD reach with nothing in its way
 const barrierY = new Float32Array(SWASH_N);  // sea-side edge of the castle ring / placed defences, per screen column
 const pressed = new Float32Array(SWASH_N);   // px of surge held back by the barrier (drives the foam pile-up)
+const flowPh = new Float32Array(SWASH_N);    // px the thin sheet has been carried sideways, per column (drawing only)
 let surgeCapY = -1e9;                        // no surge is drawn above this screen y (set each frame by buildBarrier)
 const swashWaves = [];
 let swashNext = 30, swashReady = false;
@@ -520,6 +524,16 @@ const BIGWAVE_MOAT_DMG   = 34;    // health a moat piece loses when it absorbs a
 const BIGWAVE_WALL_DMG   = 40;    // health the nearest wall loses when no moat is in the way
 const BIGWAVE_CASTLE_HITS = 3;    // damageCastle() calls when nothing is in the way
 const BIGWAVE_GUARD_RADIUS = 6.5; // a piece must be within this many tiles of the castle centre to count
+// ← TUNE: ordinary (small) waves. Each is scaled by the wave's size factor k (0..1).
+const SWASH_MOAT_DMG    = 4;      // health a moat piece loses to the largest ordinary wave (a small one: ~1)
+const SWASH_WALL_DMG    = 4;      // same for the nearest sea-side wall when no moat is in the way
+const SWASH_CASTLE_HITS = 0.34;   // fraction of one castle hit from the largest ordinary wave when nothing is in the way
+const SWASH_SIZE_REF    = 2;      // run-up (in tile-heights) that counts as size 1
+const MOAT_FILL_MIN     = 0.3;    // how full the smallest wave leaves a moat (a big wave fills it to 1)
+const MOAT_DRY_SMALL    = 0.012;  // depth lost per tick after the smallest wave (~1.5 s to dry)
+const MOAT_DRY_BIG      = 0.002;  // depth lost per tick after a big wave (~8 s to dry; big waves come every 12-25 s)
+const runSrc = new Array(SWASH_N).fill(null);   // which wave is giving each screen column its run-up right now
+let swashCastleDebt = 0;          // fractions of a castle hit owed by ordinary waves
 let bigWave = null;               // the one active big wave, or null
 // ← TUNE: wave feel
 const SWASH_SPEED_MIN = 0.45;     // slowest wave (1 = the old fixed pace)
@@ -527,9 +541,13 @@ const SWASH_SPEED_MAX = 2.1;      // fastest wave
 const BACKWASH_DRAG   = 0.55;     // how hard retreating water slows a wave running up into it
 const BACKWASH_MIN    = 0.3;      // an incoming wave never drops below this fraction of its speed
 const SWASH_PITCH     = 1.6;      // see-saw: how far the waterline tips end to end (tile-heights; 0.6 = the old gentle rock)
-const SWASH_FAN_MIN   = 3;        // a wave ends at least this many times wider than it landed (plus 1)
-const SWASH_FAN_MAX   = 7;        // ...and at most this many
+const SWASH_SLIDE_MIN = 4;        // how fast a wave's front slides along the beach, px per tick (slowest)
+const SWASH_SLIDE_MAX = 13;       // ...fastest
+const SWASH_REACH_MIN = 0.35;     // how far along the beach a wave slides before it has thinned to nothing (x screen width)
+const SWASH_REACH_MAX = 0.95;
+const SWASH_FLOW_VIS  = 0.6;      // how strongly foam/streaks in the thin sheet are carried sideways (0 = not at all)
 let bigWaveTimer = BIGWAVE_FIRST;
+let ringK = 0;                    // size of the biggest wave that filled the castle ring (sets how slowly it dries)
 let ringCover = 0, ringDepth = 0, ringDamp = 0, ringFeed = 0; // castle ring: how far the water has poured round, how deep, how damp (drawing only)
 let castleShown = 100;            // castle health as DRAWN - eases toward castleHP so the castle melts instead of popping
 let pieceDrawHealth = 100;        // set by drawPlacedPieces() so walls draw melted to their health
@@ -541,7 +559,7 @@ const RING_TILES = [[2,3],[3,2],[4,2],[5,2],[6,2],[7,3],[7,4],[7,5],[7,6],[7,7],
 function spawnSwashWave() {
   const th = TH();
   const big = Math.random() < 0.25;
-  const dir = Math.random() < 0.5 ? -1 : 1;        // +1 = comes in from the left and sloshes right; -1 = the reverse
+  const dir = Math.random() < 0.5 ? -1 : 1;        // +1 = lands and slides to the right; -1 = slides to the left
   const r = Math.random();
   const spd = SWASH_SPEED_MIN + (SWASH_SPEED_MAX - SWASH_SPEED_MIN) * r * r;   // most waves lazy-to-medium, a few fast
   swashWaves.push({
@@ -549,28 +567,48 @@ function spawnSwashWave() {
     amp: th * (0.35 + Math.random() * 0.85) * (big ? 1.6 : 1),          // up to ~2 tiles of run-up
     rise: 30 + Math.random() * 40, fall: 80 + Math.random() * 150,
     seed: Math.random() * 100,
-    dir, v: 3.5 + Math.random() * 7.5,                                  // sideways travel, px per (speed-1) tick
-    x0: dir > 0 ? SW * (-0.12 + Math.random() * 0.4) : SW * (1.12 - Math.random() * 0.4),   // starts on its entry side
-    sig: SW * (0.05 + Math.random() * 0.09),                           // narrow where it lands...
-    fan: SWASH_FAN_MIN + Math.random() * (SWASH_FAN_MAX - SWASH_FAN_MIN), // ...and this many times wider by the time it is gone
-    base: Math.random() * 0.15,
+    dir, v: SWASH_SLIDE_MIN + Math.random() * (SWASH_SLIDE_MAX - SWASH_SLIDE_MIN),           // front speed along the beach
+    x0: dir > 0 ? SW * (-0.05 + Math.random() * 0.55) : SW * (1.05 - Math.random() * 0.55), // where it lands
+    up: SW * (0.03 + Math.random() * 0.05),                                                  // it spreads only a little the other way
+    reach: SW * (SWASH_REACH_MIN + Math.random() * (SWASH_REACH_MAX - SWASH_REACH_MIN)),
   });
   swashNext = (tick | 0) + (Math.random() < 0.3 ? 12 + Math.random() * 30 : 50 + Math.random() * 170); // sometimes a quick double
 }
 
-// where a swash wave's bulge is centred, and how wide it has fanned, at clock value p
-function swashCentre(w, p) { return w.x0 + w.dir * w.v * p; }
-function swashWidth(w, p)  { return w.sig * (1 + w.fan * Math.min(1, Math.max(0, p) / (w.rise + w.fall))); }
+// One swash wave at screen x. The wave lands at x0 and is poured along the beach: the further downstream,
+// the later it arrives (d / v) and the thinner it is. Returns its run-up factor 0..1 at x (0 = not there yet,
+// or gone) and sets swashFalling (is that water draining back?) and swashMove (0..1, is it still sliding?).
+let swashFalling = false, swashMove = 0;
+function swashShape(w, sx) {
+  const d = (sx - w.x0) * w.dir;                  // + = downstream (the way it slides), - = upstream
+  let lat, tau;
+  if (d >= 0) { const q = d / w.reach; lat = Math.exp(-2.2 * q * Math.sqrt(q)); tau = d / Math.max(0.01, w.v); }
+  else { const q = d / w.up; lat = Math.exp(-q * q); tau = -d / Math.max(0.01, w.v * 0.5); }
+  const age = w.p - tau - (noise2(sx * 0.0035 + w.seed, w.seed * 0.7) + 0.5) * 14;   // ragged front
+  swashFalling = false; swashMove = 0;
+  if (age <= 0) return 0;
+  const rise = w.rise * 0.55;                     // each stretch of beach fills fast as the front passes...
+  const pour = rise + (w.v > 0.5 ? 0.6 * w.reach / w.v : 0);   // how long the pour keeps feeding the sheet
+  let a;
+  if (age < rise) { const u = age / rise; a = 1 - (1 - u) * (1 - u); swashMove = 1; }
+  else {                                          // ...stays up while the pour lasts, then drains slowly
+    const u = (age - rise - Math.max(0, pour - tau - rise)) / w.fall;
+    if (u >= 1) return 0;
+    if (u <= 0) { a = 1; swashMove = 1; }
+    else { const q = 1 - u; a = q * q * (3 - 2 * q); swashFalling = true; swashMove = u < 0.5 ? 1 - u * 2 : 0; }
+  }
+  return a * lat;
+}
+// where a wave's sliding front is at clock value p (it stops once it has run its reach)
+function swashCentre(w, p) { return w.x0 + w.dir * Math.min(w.reach, w.v * Math.max(0, p)); }
 
 // How much water is draining back down the beach at screen x right now (px of run-up, weighted by speed).
 function backwashAt(x, except) {
   let back = 0;
   for (const o of swashWaves) {
-    if (o === except || o.p <= o.rise) continue;
-    const u = (o.p - o.rise) / o.fall;
-    if (u >= 1) continue;
-    const dx = (x - swashCentre(o, o.p)) / swashWidth(o, o.p);
-    back += o.amp * (1 - u) * Math.exp(-dx * dx) * o.spd;
+    if (o === except) continue;
+    const s = swashShape(o, x);
+    if (s > 0 && swashFalling) back += o.amp * s * o.spd;
   }
   return back;
 }
@@ -598,14 +636,14 @@ function updateSwash(tk) {
   if (tk >= swashNext) spawnSwashWave();
   // each wave runs on its own clock: its random speed, slowed while it runs up into backwash
   for (const w of swashWaves) {
-    w.slow = w.p < w.rise ? backwashSlow(swashCentre(w, w.p), w) : 1;
+    w.slow = w.p < w.rise * 0.55 + w.reach / Math.max(0.01, w.v) ? backwashSlow(swashCentre(w, w.p), w) : 1;
     w.p += w.spd * w.slow;
   }
   for (let i = swashWaves.length - 1; i >= 0; i--) {
     const w = swashWaves[i];
-    if (w.p > w.rise + w.fall + 60) swashWaves.splice(i, 1);
+    if (w.p > w.rise + w.fall + w.reach / Math.max(0.01, w.v) + 60) swashWaves.splice(i, 1);
   }
-  let bAge = -1, bA = 0, bC = 0;
+  let bAge = -1, bA = 0, bC = 0, bDX = 0;
   if (bigWave) {
     const w = bigWave;
     w.slow = (w.p >= w.draw && w.p < w.draw + w.rise) ? Math.max(0.5, backwashSlow(w.x, null)) : 1;
@@ -619,6 +657,7 @@ function updateSwash(tk) {
     const pr = bAge <= w.draw ? 0 : bAge < w.draw + w.rise ? 0.5 * (bAge - w.draw) / w.rise
              : Math.min(1, 0.5 + 0.5 * (bAge - w.draw - w.rise) / (w.hold + w.fall * 0.5));
     bC = w.cx + w.dir * w.slAmp * (2 * pr - 1);
+    bDX = bC - w.x;                                  // how far the big wave slid sideways this tick
     if (bigWave) bigWave.x = bC;
   }
   buildBarrier();
@@ -626,25 +665,23 @@ function updateSwash(tk) {
   const tilt = Math.sin(tk * 0.021 + tiltPhase) * th * SWASH_PITCH * (noise2(tk * 0.003, 9.1) + 0.7);
   for (let i = 0; i < SWASH_N; i++) {
     const sx = i * SWASH_STEP;
-    let run = 0;
+    let run = 0, flow = 0, srcW = null;
     for (let j = 0; j < swashWaves.length; j++) {
       const w = swashWaves[j];
-      const age = w.p - (noise2(sx * 0.0035 + w.seed, w.seed * 0.7) + 0.5) * 30;
-      if (age <= 0) continue;
-      let a;
-      if (age < w.rise) { const u = age / w.rise; a = 1 - (1 - u) * (1 - u); }
-      else { const u = (age - w.rise) / w.fall; if (u >= 1) continue; a = 1 - u; a = a * a * (3 - 2 * a); }
-      const dx = (sx - swashCentre(w, age)) / swashWidth(w, age);         // the bulge travels along the beach, fanning out
-      const lat = w.base + (1 - w.base) * Math.exp(-dx * dx);
-      const rr = a * w.amp * lat * (0.75 + 0.25 * (noise2(sx * 0.006 + w.seed * 3.1, 5.5) + 0.5));
-      if (rr > run) run = rr;
+      const s = swashShape(w, sx);                                         // poured along the beach from where it landed
+      if (s <= 0) continue;
+      const rr = s * w.amp * (0.75 + 0.25 * (noise2(sx * 0.006 + w.seed * 3.1, 5.5) + 0.5));
+      if (rr > run) { run = rr; srcW = w; }
+      flow += w.dir * w.v * w.spd * w.slow * swashMove * Math.min(1, rr / (th * 0.6));   // the sheet is carried with the front
     }
     if (bigWave) {
       const dx = (sx - bC) / bigWave.sig;
       const lat = Math.exp(-dx * dx);
       if (bA < 0) run += bA * (0.45 + 0.55 * lat);
-      else { const rr = bA * lat; if (rr > run) run = rr; }
+      else { const rr = bA * lat; if (rr > run) { run = rr; srcW = bigWave; } flow += bDX * lat; }
     }
+    runSrc[i] = srcW;
+    flowPh[i] += flow * SWASH_FLOW_VIS;
     if (run > 0) run *= 1 + 0.16 * Math.abs(Math.sin(sx * 0.02 + tk * 0.012));   // scalloped, shell-ribbed edge
     run += tilt * (sx / SW - 0.5) * 2;
     const chop = Math.sin(sx * 0.045 + tk * 0.05) * 1.2 + Math.sin(sx * 0.013 - tk * 0.031) * 1.6;
@@ -712,6 +749,51 @@ function surgeReaches(col, row) {
   return rawShoreYAt(f.x) <= f.y + 2;
 }
 
+// Size factor 0..1 of a wave: a big wave is 1, an ordinary wave is its run-up against SWASH_SIZE_REF tile-heights.
+function waveSizeK(w) { return !w ? 0 : w.draw !== undefined ? 1 : Math.min(1, w.amp / (TH() * SWASH_SIZE_REF)); }
+// Which wave's water is at this tile's sea-side corner right now (null = none / only the tide).
+function surgeSourceAt(col, row) {
+  const f = iso(col + 1, row + 1, 0);
+  const i = Math.max(0, Math.min(SWASH_N - 1, Math.round(f.x / SWASH_STEP)));
+  return runSrc[i];
+}
+// Is the TIDE itself (no wave) already at this tile's sea-side corner?
+function tideReaches(col, row) {
+  const f = iso(col + 1, row + 1, 0);
+  return baseShoreYAt(f.x) <= f.y + 2;
+}
+// How strongly is this tile being fed right now: 1 if it sits in the tide or a big wave, else the wave's size.
+function feedSizeAt(col, row) {
+  if (tideReaches(col, row)) return 1;
+  const s = surgeSourceAt(col, row);
+  return s ? waveSizeK(s) : 0.15;
+}
+// The moment an ordinary wave's pour is at its fullest: that is when it lands its (small) hit.
+function swashHitAt(w) { return w.rise * 0.55 + (w.v > 0.5 ? 0.6 * w.reach / w.v : 0) + 14; }
+
+// An ordinary wave reaches the defences: the same locked chain as a big wave, scaled down by its size.
+function applySwashHit(w) {
+  if (gameOver || wavePhase !== 'defend') return;
+  const k = waveSizeK(w);
+  const hit = p => guardsCastle(p) && surgeReaches(p.col, p.row) && surgeSourceAt(p.col, p.row) === w;
+  // 1. moat pieces it reaches absorb it
+  const moats = placedPieces.filter(p => p.id.indexOf('moat-') === 0 && hit(p));
+  if (moats.length) { moats.forEach(p => { p.health = Math.max(0, p.health - SWASH_MOAT_DMG * k); }); return; }
+  // 2. the nearest wall / drawbridge on the castle's sea side
+  let best = null, bestD = 1e9;
+  for (const p of placedPieces) {
+    if (p.id.indexOf('moat-') === 0 || !hit(p)) continue;
+    const d = Math.hypot(p.col - 7, p.row - 7);
+    if (d < bestD) { bestD = d; best = p; }
+  }
+  if (best) { best.health = Math.max(0, best.health - SWASH_WALL_DMG * k); return; }
+  // 3. nothing in the way and it reaches the castle ring: fractions of a hit, paid through damageCastle()
+  if (surgeReaches(7, 7) && surgeSourceAt(7, 7) === w) {
+    swashCastleDebt += SWASH_CASTLE_HITS * k;
+    while (swashCastleDebt >= 1) { swashCastleDebt -= 1; damageCastle(); }
+  }
+}
+
 function applyBigWaveHit() {
   if (gameOver) return;
   const hit = p => guardsCastle(p) && surgeReaches(p.col, p.row);
@@ -741,20 +823,38 @@ function tickSurge() {
     if (p.id.indexOf('moat-') !== 0) continue;
     const fed = surgeReaches(p.col, p.row);
     if (fed && guardsCastle(p)) moatHolding = true;
-    if (fed) { p.cover = Math.min(1, (p.cover || 0) + 0.013); p.depth = Math.min(1, (p.depth || 0) + 0.05); p.damp = 1; }
-    else {
-      if (p.depth > 0) { p.depth = Math.max(0, p.depth - 0.0035); if (p.depth === 0) p.cover = 0; }
+    if (fed) {
+      p.feedK = Math.max(p.feedK || 0, feedSizeAt(p.col, p.row));        // remember the biggest wave that filled it
+      const level = MOAT_FILL_MIN + (1 - MOAT_FILL_MIN) * p.feedK;       // a small wave only part-fills it
+      p.cover = Math.min(1, (p.cover || 0) + 0.013);
+      if ((p.depth || 0) < level) p.depth = Math.min(level, (p.depth || 0) + 0.05);
+      p.damp = 1;
+    } else {
+      if (p.depth > 0) {                                                 // small wave: dries fast. big wave: dries slowly.
+        p.depth = Math.max(0, p.depth - (MOAT_DRY_SMALL + (MOAT_DRY_BIG - MOAT_DRY_SMALL) * (p.feedK || 0)));
+        if (p.depth === 0) { p.cover = 0; p.feedK = 0; }
+      }
       if (p.damp > 0) p.damp = Math.max(0, p.damp - 0.0012);
     }
   }
   // castle ring: pours round from the sea-side corner while a wave is against it, then dries up
   if (ringFeed > 0) ringFeed--;
   const ringFed = ringFeed > 0 || (!moatHolding && surgeReaches(7, 7));
-  if (ringFed) { ringCover = Math.min(1, ringCover + 0.008); ringDepth = Math.min(1, ringDepth + 0.05); ringDamp = 1; }
-  else {
-    if (ringDepth > 0) { ringDepth = Math.max(0, ringDepth - 0.003); if (ringDepth === 0) ringCover = 0; }
+  if (ringFed) {
+    ringK = Math.max(ringK, ringFeed > 0 ? 1 : feedSizeAt(7, 7));
+    const level = MOAT_FILL_MIN + (1 - MOAT_FILL_MIN) * ringK;
+    ringCover = Math.min(1, ringCover + 0.008);
+    if (ringDepth < level) ringDepth = Math.min(level, ringDepth + 0.05);
+    ringDamp = 1;
+  } else {
+    if (ringDepth > 0) {
+      ringDepth = Math.max(0, ringDepth - (MOAT_DRY_SMALL + (MOAT_DRY_BIG - MOAT_DRY_SMALL) * ringK));
+      if (ringDepth === 0) { ringCover = 0; ringK = 0; }
+    }
     if (ringDamp > 0) ringDamp = Math.max(0, ringDamp - 0.001);
   }
+  // ordinary waves land their small hit when their pour is at its fullest
+  for (const w of swashWaves) if (!w.hit && w.p >= swashHitAt(w)) { w.hit = true; applySwashHit(w); }
   if (bigWave && !bigWave.hit && bigWave.p >= bigWave.draw + bigWave.rise) { bigWave.hit = true; applyBigWaveHit(); }
   if (gameOver || wavePhase !== 'defend') { bigWaveTimer = BIGWAVE_FIRST; return; }
   if (!bigWave && --bigWaveTimer <= 0) {
@@ -1116,7 +1216,7 @@ function drawShoreFoamBand(t) {
   // bubbles trailing just behind the edge
   ctx.fillStyle = '#e6f6ff';
   for (let i = 0; i < SWASH_N; i += 2) {
-    const n = noise2(i * 0.5, t * 0.012);
+    const n = noise2((i * SWASH_STEP - flowPh[i]) * 0.0625, t * 0.012);
     if (n < 0.08) continue;
     ctx.globalAlpha = 0.35 + n * 0.9;
     ctx.beginPath();
@@ -2759,8 +2859,8 @@ canvas.addEventListener('click', e => {
   coins = 0;
   truckCooldown = 0;
   healthPeekCol = -1; healthPeekRow = -1; healthPeekTimer = 0;
-  bigWave = null; bigWaveTimer = BIGWAVE_FIRST;
-  ringCover = 0; ringDepth = 0; ringDamp = 0; ringFeed = 0; castleShown = CASTLE_MAX_HP;
+  bigWave = null; bigWaveTimer = BIGWAVE_FIRST; swashCastleDebt = 0;
+  ringCover = 0; ringDepth = 0; ringDamp = 0; ringFeed = 0; ringK = 0; castleShown = CASTLE_MAX_HP;
   selectedCounter = null;
   document.querySelectorAll('.counter-btn.selected').forEach(b => b.classList.remove('selected'));
 });
@@ -2784,8 +2884,8 @@ canvas.addEventListener('touchend', e => {
   coins = 0;
   truckCooldown = 0;
   healthPeekCol = -1; healthPeekRow = -1; healthPeekTimer = 0;
-  bigWave = null; bigWaveTimer = BIGWAVE_FIRST;
-  ringCover = 0; ringDepth = 0; ringDamp = 0; ringFeed = 0; castleShown = CASTLE_MAX_HP;
+  bigWave = null; bigWaveTimer = BIGWAVE_FIRST; swashCastleDebt = 0;
+  ringCover = 0; ringDepth = 0; ringDamp = 0; ringFeed = 0; ringK = 0; castleShown = CASTLE_MAX_HP;
   selectedCounter = null;
   document.querySelectorAll('.counter-btn.selected').forEach(b => b.classList.remove('selected'));
 });

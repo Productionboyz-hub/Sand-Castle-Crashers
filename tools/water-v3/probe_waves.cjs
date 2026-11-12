@@ -43,10 +43,10 @@ const check = (ok, name, info) => { if (!ok) fail++; console.log('  ' + (ok ? 'P
     for (let trial = 0; trial < 6; trial++) {
       swashWaves.length = 0; swashNext = 1e12;
       spawnSwashWave(); const w = swashWaves[0];
-      w.amp = TH() * 3; w.dir = trial % 2 ? -1 : 1; w.x0 = w.dir > 0 ? SW * 0.1 : SW * 0.9; w.spd = 1; w.rise = 40; w.fall = 160; w.base = 0; w.sig = SW * 0.09; w.v = 3;
+      w.amp = TH() * 3; w.dir = trial % 2 ? -1 : 1; w.x0 = w.dir > 0 ? SW * 0.1 : SW * 0.9; w.spd = 1; w.rise = 40; w.fall = 160; w.base = 0; w.sig = SW * 0.09; w.v = 3; w.reach = SW * 0.6; w.up = SW * 0.04; if (typeof flowPh !== 'undefined') flowPh.fill(0);
       // Driven by hand, no frames in between: at each step compute the waterline once WITHOUT the wave and once
       // WITH it at the same tick, so pitch and chop cancel and only the wave's own run-up is left.
-      const cents = [], widths = [], late = [];
+      const cents = [], widths = [], late = [], land = { max: 0, at100: 0 };
       const t0k = tick + 5; if (!('p' in w)) w.born = t0k;         // builds before patch 5 time a wave by tick - born
       for (let f = 0; f < 150; f++) {
         swashWaves.length = 0; updateSwash(t0k + f);
@@ -59,32 +59,44 @@ const check = (ok, name, info) => { if (!ok) fail++; console.log('  ' + (ok ? 'P
         const spread = Math.sqrt(m2 / sw);                          // how spread out the wave is (weighted std-dev, px)
         if (f % 10 === 0) cents.push(Math.round(c));
         if (f >= 45 && f < 55) widths.push(spread); if (f >= 135 && f < 145) late.push(spread);
+        // does the water stay up where it landed while the front slides away? (a travelling bump drops behind itself)
+        const i0 = Math.max(1, Math.min(SWASH_N - 2, Math.round(w.x0 / SWASH_STEP))), at0 = (run[i0 - 1] + run[i0] + run[i0 + 1]) / 3;
+        if (at0 > land.max) land.max = at0;
+        if (f === 100) land.at100 = at0;
       }
       const avg = a => Math.round(a.reduce((x, y) => x + y, 0) / (a.length || 1));
-      res.push({ dir: w.dir, c0: cents[1], c1: cents[cents.length - 1], w0: avg(widths), w1: avg(late) });
+      res.push({ dir: w.dir, c0: cents[1], c1: cents[cents.length - 1], w0: avg(widths), w1: avg(late), skew: land.max > 0 ? Math.round(100 * land.at100 / land.max) : 0, flow: typeof flowPh === 'undefined' ? null : Math.round(Array.from(flowPh).reduce((x, y) => x + y, 0) / SWASH_N * w.dir) });
     }
     return { res };
   }, raf);
   const travelOk = !lone.missing && lone.res.every(r => (r.c1 - r.c0) * r.dir > 40);
   const fanOk = !lone.missing && lone.res.filter(r => r.w0 > 0 && r.w1 > r.w0 * 1.3).length >= 5;
   check(travelOk, 'W3a a lone wave travels away from its entry side (left->right / right->left)', lone.res || lone);
+  const pourOk = !lone.missing && lone.res.every(r => r.skew >= 75);
+  const flowOk = !lone.missing && lone.res.every(r => r.flow !== null && r.flow > 20);
+  check(pourOk, 'W9 poured, not a travelling bump: with the front 300 px away, the water where it landed is still at 75%+ of its height (percent)', (lone.res || []).map(r => r.skew));
+  check(flowOk, 'W10 foam/streaks in the thin sheet are carried sideways in the direction the wave slides (avg px per column)', (lone.res || []).map(r => r.flow));
   check(fanOk, 'W3b ...and fans out wider as it goes (spread of the run-up, late vs early; 5 of 6 trials)', (lone.res || []).map(r => [r.w0, r.w1]));
 
-  // W4 speed variety, measured as how fast each wave's run-up actually happens
-  const spd = await p.evaluate(async (rafSrc) => { const raf = () => new Promise(r => requestAnimationFrame(r));
+  // W4 speed variety, measured as how fast each wave's run-up actually happens (driven by hand, pitch/chop subtracted)
+  const spd = await p.evaluate(() => {
     const ticks = [];
     for (let k = 0; k < 40; k++) {
       swashWaves.length = 0; swashNext = 1e12; spawnSwashWave(); const w = swashWaves[0];
-      w.rise = 50; w.amp = TH() * 3; w.v = 0; w.sig = SW * 4; w.fan = 0; w.base = 1;   // no sideways travel: time-to-peak is run-up speed only
-      const ref = Math.max(0, Math.min(SWASH_N - 1, Math.round((typeof swashCentre === 'function' ? swashCentre(w, 0) : w.x0) / SWASH_STEP)));
+      w.rise = 50; w.amp = TH() * 3; w.v = 0; w.sig = SW * 4; w.fan = 0; w.base = 1; w.x0 = SW / 2;   // no sideways travel: time-to-peak is run-up speed only
+      const ref = Math.round(SW / 2 / SWASH_STEP), t0k = tick + 5; if (!('p' in w)) w.born = t0k;
       let best = -1e9, at = 0;
-      for (let f = 0; f < 230; f++) { await new Promise(r => requestAnimationFrame(r)); const v = baseY[ref] - rawY[ref]; if (v > best) { best = v; at = f; } }
+      for (let f = 0; f < 260; f++) {
+        swashWaves.length = 0; updateSwash(t0k + f); const calm = baseY[ref] - rawY[ref];
+        swashWaves.push(w); updateSwash(t0k + f); const v = (baseY[ref] - rawY[ref]) - calm;
+        if (v > best + 0.01) { best = v; at = f; }
+      }
       ticks.push(at);
     }
     swashWaves.length = 0; swashNext = 0;
     ticks.sort((a, b) => a - b);
     return { fastest: ticks[2], slowest: ticks[ticks.length - 3], all: ticks };
-  }, raf);
+  });
   check(spd.slowest >= spd.fastest * 3, 'W4 wave speeds vary: slowest run-ups take at least 3x as long as the fastest', { fastest: spd.fastest, slowest: spd.slowest });
 
   // W5 backwash slows an incoming wave
@@ -105,17 +117,17 @@ const check = (ok, name, info) => { if (!ok) fail++; console.log('  ' + (ok ? 'P
   // W7 pitch: with no waves at all, how far does the see-saw tip the waterline (one end up, the other down)?
   // W8 fan-out: how many times wider than where it landed does a wave get, on average?
   const ext = await p.evaluate(() => {
-    if (typeof swashWidth !== 'function') return { missing: true };
+    if (typeof swashCentre !== 'function') return { missing: true };
     swashWaves.length = 0; swashNext = 1e12; const sn = swashNext;
     let tip = 0; const L = 2, R = SWASH_N - 3;
     for (let tk = 0; tk < 30000; tk += 7) { updateSwash(tk); const d = Math.abs((baseY[L] - rawY[L]) - (baseY[R] - rawY[R])) / 2 / TH(); if (d > tip) tip = d; }
     let fan = 0; const N = 300;
-    for (let k = 0; k < N; k++) { swashWaves.length = 0; spawnSwashWave(); const w = swashWaves[0]; fan += swashWidth(w, w.rise + w.fall) / w.sig; }
+    for (let k = 0; k < N; k++) { swashWaves.length = 0; spawnSwashWave(); const w = swashWaves[0]; fan += (w.reach || 0) / SW; }
     swashWaves.length = 0; swashNext = 0;
     return { tipTiles: +tip.toFixed(2), fanAvg: +(fan / N).toFixed(2) };
   });
   check(!ext.missing && ext.tipTiles >= 1.8, 'W7 strong pitch: the see-saw tips each end of the waterline by at least 1.8 tile-heights at its peak', ext);
-  check(!ext.missing && ext.fanAvg >= 5, 'W8 strong fan-out: waves end at least 5x wider than they land, on average', ext);
+  check(!ext.missing && ext.fanAvg >= 0.5, 'W8 long slide: waves run at least half the screen width along the beach, on average', ext);
   check(errs.length === 0, 'W6 no page errors', errs.slice(0, 3));
   await b.close();
   console.log(fail ? 'FAILED (' + fail + ')' : 'ALL PASS');
