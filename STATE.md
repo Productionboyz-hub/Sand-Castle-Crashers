@@ -78,6 +78,18 @@ Fifth commit, same day - rising water in the moat (J's "SEE a moat
   NOT re-run this commit. Rebuild main + patches 2-9 = committed file.
   Known look issue: the old per-tile rim outline still draws a thin line
   between joined moat tiles.
+Sixth commit, 2026-11-13 - cleaner truck size (NOT water work; on this
+  branch as its own commit because it is the branch J is testing).
+  patch_truck10.py, DRAWING ONLY: the truck was drawn in fixed pixels, so
+  it ignored zoom and was barely longer than a tourist is tall. Now scales
+  with camZoom (same 0.9 factor as tourists/crabs) times TRUCK_SCALE = 2:
+  about 2.6 tourist-heights long. Speed, pickup radius, coins, cooldown
+  untouched. probe_truck.cjs ALL PASS on branch, 2 of 3 FAIL on the
+  previous commit. No other tests re-run.
+  Design ideas raised by J, not started: begin with a small starter
+  castle (one bucket mound) that grows with waves survived, instead of a
+  full castle on an empty beach. Castle stays oversized against people on
+  purpose (hero scale). Crab size against people not yet checked.
 GAME_VER still reads v0.8.10 on the branch - bump at merge/deploy time.
 Backlog changes: opened #17 (damp-band hard edge), #18 (water v3 open
   items).

@@ -2136,15 +2136,17 @@ function tickTruck() {
   }
 }
 
+const TRUCK_SCALE = 2;   // ← TUNE: truck size against a tourist (2 = about 2.5 tourist-heights long)
 function drawTruck() {
   if (!truck) return;
   const sp = iso(truck.col, truck.row, 0.02);
   const flip = truck.dirC < 0 ? -1 : 1;
+  const s = camZoom * 0.9 * TRUCK_SCALE;   // scales with zoom, same base factor as tourists and crabs
   ctx.save();
   ctx.translate(sp.x, sp.y);
-  ctx.scale(flip, 1);
+  ctx.scale(flip * s, s);
   ctx.shadowColor = '#88aaff';
-  ctx.shadowBlur = 6;
+  ctx.shadowBlur = 6 * s;
   ctx.fillStyle = '#3fa9e0';
   ctx.beginPath();
   ctx.moveTo(-18, 8); ctx.lineTo(-18, -2); ctx.lineTo(-8, -10);
