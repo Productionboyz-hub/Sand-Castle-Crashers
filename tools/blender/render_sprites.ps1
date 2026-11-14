@@ -44,8 +44,8 @@ try {
     # the game loads the melt run from assets\sprites\castle_melt.png - put the fresh sheet there
     $melt = Join-Path (Join-Path $PSScriptRoot $Out) "castle_melt.png"
     if (($Only -ne "crumble") -and (Test-Path $melt)) {
-        if ($Scale -ne 2 -or $MeltStages -ne 10) {
-            Write-Host "Not copied into the game: it expects -Scale 2 and -MeltStages 10 (see MELT_ constants in sandcastle_iso2.html)."
+        if ($Scale -ne 2 -or $MeltStages -ne 10 -or $Seed -ne 7) {
+            Write-Host "Not copied into the game: it expects -Scale 2, -MeltStages 10 and -Seed 7 (see MELT_ constants in sandcastle_iso2.html)."
         } else {
             $dest = Join-Path $PSScriptRoot "..\..\assets\sprites"
             New-Item -ItemType Directory -Force -Path $dest | Out-Null

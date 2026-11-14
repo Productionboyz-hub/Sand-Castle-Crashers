@@ -115,12 +115,13 @@ def _blur(a, sigma_cells):
 _LEVELS = {}
 
 
-def add_melted_castle(scene, amount, seed, res=0.02):
-    """The castle as ONE mass of wet sand, melted from the sea side (high col + row) toward the back.
+def melt_heightfield(amount, seed, res=0.02):
+    """Height of the melted castle at every grid point. Returns (C, R, H, wet): col, row, height (Blender units)
+    and wetness 0..1, as 2D arrays.
     amount 0 = the whole castle, 0.45 = the sea-facing half has slumped, 1 = the whole castle is a low mound.
     The same seed gives the same slump pattern at every amount, so a run of amounts sags smoothly.
-    Built as a height map: every point is the castle's height, blurred and lowered by how melted it is there,
-    so towers sag into rounded humps and their sand runs out into an apron. No chunks, no physics."""
+    Every point is the castle's height, blurred and lowered by how melted it is there, so towers sag into
+    rounded humps and their sand runs out into an apron."""
     lo, hi = -1.6, 5.6
     n = int(round((hi - lo) / res)) + 1
     ax = np.linspace(lo, hi, n)
@@ -150,6 +151,29 @@ def add_melted_castle(scene, amount, seed, res=0.02):
     H = np.maximum(0.0, H - 0.045 * m)                        # the apron ends in a soft lip, not an endless thin film
     H[H < 0.03] = 0.0                                         # no paper-thin skirt round the foot
     wet = np.clip(0.15 + 0.95 * m, 0.0, 1.0)
+    return C, R, H, wet
+
+
+# Where the game plants its flags: (col, row) of the tile whose centre holds the pole - four towers and the back turret.
+FLAG_SPOTS = ((0, 0), (3, 0), (0, 3), (3, 3), (1, 1))
+
+
+def flag_heights(amount, seed, res=0.02):
+    """Height of the sand under each flag at this melt amount, in game z units (the game moves its flags with this)."""
+    C, R, H, _wet = melt_heightfield(amount, seed, res)
+    out = []
+    for col, row in FLAG_SPOTS:
+        i = int(round((col + 0.5 - C[0, 0]) / res))
+        j = int(round((row + 0.5 - R[0, 0]) / res))
+        out.append(round(float(H[i - 2:i + 3, j - 2:j + 3].mean()) / ZU, 2))
+    return out
+
+
+def add_melted_castle(scene, amount, seed, res=0.02):
+    """The castle as ONE mass of wet sand, melted from the sea side (high col + row) toward the back.
+    No chunks, no physics: a mesh built from melt_heightfield()."""
+    C, R, H, wet = melt_heightfield(amount, seed, res)
+    n = C.shape[0]
     # mesh: one quad per grid cell that has any sand in it
     keep = (H[:-1, :-1] > 0) | (H[1:, :-1] > 0) | (H[:-1, 1:] > 0) | (H[1:, 1:] > 0)
     idx = np.arange(n * n).reshape(n, n)
@@ -461,7 +485,10 @@ def main():
             paths += rs.render_frames(scene, [1], fdir, 'melt_%02d' % i)
         rs.pack_sheet(paths, ['melt_%02d' % i for i in range(n)],
                       os.path.join(out, 'castle_melt.png'), os.path.join(out, 'castle_melt.json'), cfg,
-                      extra={'kind': 'stages', 'footprint': {'cols': 4, 'rows': 4}, 'amounts': [round(a, 4) for a in amounts]})
+                      extra={'kind': 'stages', 'footprint': {'cols': 4, 'rows': 4}, 'amounts': [round(a, 4) for a in amounts],
+                             # per flag: its tile and the sand height under it at each stage (game z units)
+                             'flags': [{'col': c, 'row': r, 'z': [flag_heights(a, cfg.seed)[k] for a in amounts]}
+                                       for k, (c, r) in enumerate(FLAG_SPOTS)]})
     print('[crumble_castle] done ->', out, flush=True)
 
 
