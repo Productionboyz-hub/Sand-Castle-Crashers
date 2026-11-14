@@ -116,6 +116,15 @@ Sixth commit, 2026-11-13 - cleaner truck size (NOT water work; on this
   the receipt checks the served image is the same size as the local one.
   Copy block tested in a throwaway clone; the full script has NOT been
   run (no deploy).
+  Wall recolour (c42870c): walls, their toolbox icons, the ghost's sand
+  base and the fallback castle are drawn in the sprite castle's sand
+  colours via sandTone() / sandBlock() (new section SAND COLOURS above
+  castleBlock). Colour only. Probe now 10/10. Walls are still flat
+  code-drawn blocks - no grain, soft edges or shadows like the castle.
+  Start Wave checked on the combined build: works at desktop, iPad and
+  iPhone sizes, served and opened as a file (headless, not a device).
+  NEXT for this work: render the three walls in Blender to match the
+  castle, including their melt with health.
   Open: image is heavy for phones; the water branch's
   own castle melt (castleCutZ / castleShown) is now only the fallback and
   should be unified; sprite sizes are constants (MELT_*), re-render only
