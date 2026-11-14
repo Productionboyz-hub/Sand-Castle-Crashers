@@ -1,5 +1,102 @@
 # STATE
 
+## STATE - 2026-11-12
+Live: unchanged (v0.8.10). No deploy this session. Golden unchanged.
+New branch: feature/water-v3 - water v3 (realistic water + big waves).
+  NOT merged, NOT deployed. Held off main so the efba0f1 device pass
+  (#2) stays bisectable. Merge only after that pass is green.
+What it is: prototype built in a soccer-app session (handoff commit
+  e9868e9), approved by J from preview clips, then two fixes here:
+  phone water was blocky (pattern scale floored, finer texture on small
+  screens) and the tile grid showed through the clear shallows
+  (per-tile isShore tint removed). Scripts + tests now live in
+  tools/water-v3/ - this repo no longer depends on the soccer repo.
+Verification (headless only - NOT a device pass):
+  test_surge3.cjs 15/15 PASS on branch, FAILS on main (expected).
+  probe_block.cjs PASS on branch, FAILED on pre-fix v3 (iPhone 2.47 -> 1.47
+  vs desktop ~1.2). probe_grid.cjs PASS on branch (0.88), FAILED on
+  pre-fix v3 (2.8). In-repo scripts rebuild the committed file from main
+  byte-for-byte.
+Second commit, same day - J tested the branch on PC ("water looks great")
+  and asked for wave changes: no BIG WAVE banner; waves enter from one
+  side, slosh across to the other and fan out (big waves too); random
+  slow/fast waves; a retreating wave slows an incoming one. Done in
+  patch_water5.py. Each wave now runs on its own clock (w.p), not
+  tick - born. probe_waves.cjs: ALL PASS on branch, 5 of 7 FAILED on the
+  previous commit. test_surge3 15/15 x3 runs, block + grid probes PASS.
+  New TUNE knobs: SWASH_SPEED_MIN/MAX, BACKWASH_DRAG, BACKWASH_MIN.
+Third commit, same day - J asked for more extreme pitch and fan-out.
+  patch_water6.py: SWASH_PITCH 0.6 -> 1.6 (waterline tips ~2 tile-heights
+  end to end at its peak, was ~0.75), fan-out ~4-8x landing width (was
+  ~2-4.5x), faster sideways slosh. probe_waves W7/W8 PASS on branch, FAILED
+  on the previous commit. test_surge3 15/15 x3.
+  Test change, stated plainly: test_surge3 S1f (moat dries gradually)
+  failed 1 run in 2 because an ordinary wave topped the moat back up
+  mid-dry. The drying phase of the test now runs with ordinary waves
+  switched off. The top-up itself is real game behaviour, visual only
+  (ordinary waves never damage), and was already common on the previous
+  commit at mid/high tide (moat at 8,8 reached 78% / 100% of ticks).
+Direction (J, 2026-11-12): the game will eventually move to 3D sprites.
+  Wants to SEE a moat fill with water (not a flat blue fill) and SEE walls
+  melt/crumble. Keep both effects; any sprite pipeline must support them
+  (fill level and damage stages), see CONTEXT.md art direction.
+Fourth commit, same day - two more asks from J after watching it:
+  (a) waves looked like "piano keys pressed left to right" - each wave was
+  a bump travelling sideways. patch_water7.py: waves are POURED - land at
+  one spot, the front slides along the beach, thins, the sheet behind
+  stays up then drains; foam/streaks/flecks in the thin water are carried
+  sideways (flowPh, drawing only). (b) patch_water8.py: wave SIZE matters.
+  Small wave part-fills a moat and it dries in ~1 s; big wave fills it and
+  it dries in ~8 s. Ordinary waves now do a LITTLE damage, defend phase
+  only, same locked chain (moat -> nearest sea-side wall -> castle),
+  scaled by size: max 4 to a moat or wall (a big wave does 34 / 40), and
+  0.34 of a castle hit (accrued in swashCastleDebt, paid via
+  damageCastle()). Big-wave damage unchanged.
+  DESIGN CHANGE: ordinary swash is no longer drawing-only.
+  New persistent state swashCastleDebt and ringK are in BOTH restart
+  handlers' reset lists.
+  Measured (headless, 60 s of defend, no big waves): low and mid tide
+  ordinary waves never reach a piece at (8,8); at high tide a moat or wall
+  there loses roughly 12-22 health a minute.
+  Tests: probe_sizes.cjs ALL PASS (5 of 7 FAIL without patch 8);
+  probe_waves ALL PASS (pour checks W9/W10 FAIL without patch 7);
+  test_surge3 15/15; block + grid PASS. Test isolation, stated plainly:
+  test_surge3 now switches ordinary waves off during its big-wave
+  scenarios (they do damage now) and holds off the next big wave while it
+  watches the moat dry.
+Fifth commit, same day - rising water in the moat (J's "SEE a moat
+  fill" ask). patch_water9.py, DRAWING ONLY: moats and the castle ring
+  are sunken trenches (two inner walls + floor; shallow / standard / deep
+  floors at 0.2 / 0.38 / 0.58 tile-heights, ring 0.38). The water surface
+  climbs the walls to just below the rim and drops as it dries, leaving
+  floor and walls damp. Level = p.depth * p.cover (ring: ringDepth *
+  per-tile cover). No new persistent state; damage, fill and dry rates
+  untouched. Neighbouring trench tiles join (no wall between them).
+  drawPoolOnTile() replaced by drawTrenchOnTile().
+  Tests (light, one run each): probe_trench.cjs ALL PASS on branch,
+  3 of 5 FAIL on the previous commit; test_surge3 15/15. Other probes
+  NOT re-run this commit. Rebuild main + patches 2-9 = committed file.
+  Known look issue: the old per-tile rim outline still draws a thin line
+  between joined moat tiles.
+Sixth commit, 2026-11-13 - cleaner truck size (NOT water work; on this
+  branch as its own commit because it is the branch J is testing).
+  patch_truck10.py, DRAWING ONLY: the truck was drawn in fixed pixels, so
+  it ignored zoom and was barely longer than a tourist is tall. Now scales
+  with camZoom (same 0.9 factor as tourists/crabs) times TRUCK_SCALE = 2:
+  about 2.6 tourist-heights long. Speed, pickup radius, coins, cooldown
+  untouched. probe_truck.cjs ALL PASS on branch, 2 of 3 FAIL on the
+  previous commit. No other tests re-run.
+  Design ideas raised by J, not started: begin with a small starter
+  castle (one bucket mound) that grows with waves survived, instead of a
+  full castle on an empty beach. Castle stays oversized against people on
+  purpose (hero scale). Crab size against people not yet checked.
+GAME_VER still reads v0.8.10 on the branch - bump at merge/deploy time.
+Backlog changes: opened #17 (damp-band hard edge), #18 (water v3 open
+  items).
+NEXT ACTION: unchanged from 2026-07-24 (deploy + device pass for efba0f1).
+  Then: device pass of feature/water-v3 on iPad + iPhone (portrait),
+  covering #18, before merging.
+
 ## STATE - 2026-07-24
 Live: v0.8.10 (commit 7e8f335 game build), deploy receipt re-verified from
 NEW repo path: YES (two stamps, both 606c0c5 - the docs-only HEAD).
@@ -216,6 +313,31 @@ Known-good before this session: 5b5373b.
     NOT deployed - held out of the in-flight device pass sequence so
     a red result stays bisectable.
     Status: fixed-unverified
+
+#17 [LOW] Damp-sand band has a hard bottom edge
+    The baked damp band (sandcastle_iso2.html ~line 468, dampGrad) fades
+    in from transparent to 0.18 and then stops dead at MEAN_WATERLINE_Y,
+    leaving a straight horizontal line across the sand at low tide.
+    Present on main (confirmed by screenshot 2026-11-12); water v3's
+    clear shallows and wet sand make it more noticeable.
+    Likely fix: fade the band out below MEAN_WATERLINE_Y too.
+    Status: open - separate change, not part of water v3.
+
+#18 [MED] Water v3 - unverified areas (branch feature/water-v3)
+    Not yet checked: portrait phones on a real device, pinch zoom, high
+    tide against the castle walls, frame rate on iPad/iPhone.
+    Balance numbers are first guesses (named constants, TUNE markers):
+    BIGWAVE_MOAT_DMG 34, BIGWAVE_WALL_DMG 40, BIGWAVE_CASTLE_HITS 3,
+    BIGWAVE_GAP_MIN/MAX 700-1500 ticks (~12-25 s), BIGWAVE_FIRST 480.
+    Old per-tile foam dots removed (they showed as stripes in the
+    shallows); foam now only along the real water edge.
+    Ordinary-wave damage numbers (SWASH_MOAT_DMG 4, SWASH_WALL_DMG 4,
+    SWASH_CASTLE_HITS 0.34) and moat dry times (MOAT_DRY_SMALL/BIG) are
+    first guesses - needs play-testing across a full tide cycle.
+    Big waves now arrive with no banner (J's call) - check on device
+    that the draw-back before the surge is enough of a tell. Wave feel
+    knobs (SWASH_SPEED_MIN/MAX, BACKWASH_DRAG/MIN) are first guesses.
+    Status: open - needs coach device pass before merge.
 
 ## Deviations from WORKFLOW, accepted
 - sec.3 src/dist split not done. Project is a working single-file monolith at
