@@ -90,6 +90,36 @@ Sixth commit, 2026-11-13 - cleaner truck size (NOT water work; on this
   castle (one bucket mound) that grows with waves survived, instead of a
   full castle on an empty beach. Castle stays oversized against people on
   purpose (hero scale). Crab size against people not yet checked.
+2026-11-14 - Blender sprite pipeline + sprite castle. NEW WORKING BRANCH:
+  feature/sprites-water = feature/water-v3 + feature/blender-sprites
+  (clean merge, d3a2c28). J's call: see everything together. All new work
+  goes here; the two source branches are frozen. Not merged, not deployed.
+  Everything reaches main together, after the water's device pass.
+  tools/blender/ (README there): render_sprites.py renders any .blend to
+  a sprite sheet + JSON with a camera matching iso() (ortho, X60 Z45,
+  39.6 px/unit, 1 game z = 0.8165 units); crumble_castle.py builds the
+  castle on the 4x4 footprint and writes castle_crumble (20-frame
+  collapse, not used by the game) and castle_melt (10 melt stages, whole
+  castle -> low mound of wet sand); render_sprites.ps1 runs it on J's PC
+  (Blender 5.3, C:\Program Files\Blender Foundation\Blender 5.3).
+  Renders are git-ignored (tools/blender/out/) EXCEPT the one sheet the
+  game loads, assets/sprites/castle_melt.png (2.5 MB, J OK'd committing).
+  Game: new section CASTLE SPRITE (melt run) above drawCastle(). Stage
+  follows castleHP, cross-fades on a change, rests on a whole stage.
+  Flags ride their tower down (MELT_FLAGS table, from castle_melt.json).
+  Falls back to the code-drawn castle if the image is missing. New
+  persistent state castleMeltPos is in BOTH restart reset lists.
+  Tests: tools/blender/probe_castle_sprite.cjs 9/9 on the combined
+  build, test_surge3 15/15 (one run each). Other water probes not re-run.
+  Open: deploy_scc.ps1 does not copy assets/ into public/ yet (live would
+  show the drawn castle); image is heavy for phones; the water branch's
+  own castle melt (castleCutZ / castleShown) is now only the fallback and
+  should be unified; sprite sizes are constants (MELT_*), re-render only
+  with -Scale 2 -MeltStages 10 -Seed 7; not checked on a phone or at
+  other zooms. Ideas not started: starter castle that grows with waves.
+  J gave a standing OK this session to commit game + Blender tool changes
+  to this branch without asking; re-confirm it in a new session. Merging
+  to main and deploying are always asked.
 GAME_VER still reads v0.8.10 on the branch - bump at merge/deploy time.
 Backlog changes: opened #17 (damp-band hard edge), #18 (water v3 open
   items).
