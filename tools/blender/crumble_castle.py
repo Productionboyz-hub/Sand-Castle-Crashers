@@ -7,7 +7,8 @@
 # pull it down. To read as SAND rather than stone: once a chunk starts to move it rounds off, goes lumpy and
 # shrinks away, while a mound of loose sand builds up underneath. Writes into the output folder:
 #   castle_crumble.png / .json   the collapse animation (default 20 frames; frame 0 is the intact castle)
-#   castle_states.png  / .json   3 stills: intact, cracked, half (half = the sea side MELTED: slumped wet sand)
+#   castle_melt.png    / .json   a run of melt stages (default 10): from the whole castle, sagging from the sea
+#                                side, down to a low mound of wet sand - pick the stage by castle health
 #   frames/                      the individual frames
 # Everything is seeded, so the same command gives the same sprites.
 import argparse
@@ -19,7 +20,7 @@ import sys
 import bpy
 import numpy as np
 import bmesh  # noqa: E402  (bmesh needs bpy loaded first when run outside Blender)
-from mathutils import Euler, Vector, noise
+from mathutils import Vector, noise
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import render_sprites as rs  # noqa: E402
@@ -111,9 +112,13 @@ def _blur(a, sigma_cells):
     return np.apply_along_axis(lambda v: np.convolve(np.pad(v, r, mode='edge'), k, mode='valid'), 1, a)
 
 
+_LEVELS = {}
+
+
 def add_melted_castle(scene, amount, seed, res=0.02):
     """The castle as ONE mass of wet sand, melted from the sea side (high col + row) toward the back.
-    amount 0 = barely softened, 0.5 = the sea-facing half has slumped, 1 = the whole castle is a low mound.
+    amount 0 = the whole castle, 0.45 = the sea-facing half has slumped, 1 = the whole castle is a low mound.
+    The same seed gives the same slump pattern at every amount, so a run of amounts sags smoothly.
     Built as a height map: every point is the castle's height, blurred and lowered by how melted it is there,
     so towers sag into rounded humps and their sand runs out into an apron. No chunks, no physics."""
     lo, hi = -1.6, 5.6
@@ -126,11 +131,13 @@ def add_melted_castle(scene, amount, seed, res=0.02):
         H0[inside] = np.maximum(H0[inside], z1 * ZU)
     ph = seed * 0.37
     wob = 0.55 * np.sin(1.7 * C + 0.6 + ph) * np.cos(1.3 * R + 2.1 - ph) + 0.35 * np.sin(3.1 * R - 1.2 * C + ph)
-    start = 7.4 - 8.8 * amount                                # where along col+row the melting begins
+    start = 9.2 - 14.0 * amount                               # where along col+row the melting begins (0 = nowhere, 1 = even the back corner)
     t = np.clip((C + R + wob - start) / 4.2, 0.0, 1.0)
     m = t * t * (3 - 2 * t)                                   # melt 0..1 at each point
     # four versions of the castle, from crisp to a puddle; each point picks between them by how melted it is
-    levels = [_blur(H0, s / res) for s in (0.035, 0.16, 0.40, 0.80)]
+    if res not in _LEVELS:                                    # the blurs do not depend on the amount: work them out once
+        _LEVELS[res] = [_blur(H0, s / res) for s in (0.02, 0.16, 0.40, 0.80)]
+    levels = _LEVELS[res]
     u = m * (len(levels) - 1)
     i0 = np.minimum(u.astype(int), len(levels) - 2)
     f = u - i0
@@ -141,7 +148,7 @@ def add_melted_castle(scene, amount, seed, res=0.02):
     H *= 1.0 - 0.30 * m                                       # wet sand packs down as it slumps
     H += 0.012 * m * np.sin(9.0 * C + 2.0 * np.sin(4.0 * R + ph)) * np.clip(H * 6, 0, 1)   # soft runnels where it flowed
     H = np.maximum(0.0, H - 0.045 * m)                        # the apron ends in a soft lip, not an endless thin film
-    H[H < 0.004] = 0.0
+    H[H < 0.03] = 0.0                                         # no paper-thin skirt round the foot
     wet = np.clip(0.15 + 0.95 * m, 0.0, 1.0)
     # mesh: one quad per grid cell that has any sand in it
     keep = (H[:-1, :-1] > 0) | (H[1:, :-1] > 0) | (H[:-1, 1:] > 0) | (H[1:, 1:] > 0)
@@ -413,8 +420,8 @@ def main():
     ap.add_argument('--clumps', type=int, default=16, help='number of damp clumps left on the heap (0 = smooth heap)')
     ap.add_argument('--mound-height', type=float, default=1.1, help='height of the final sand heap, in game z units')
     ap.add_argument('--mound-radius', type=float, default=2.9, help='radius of the final sand heap, in tiles')
-    ap.add_argument('--melt', type=float, default=0.5, help="how far the 'half' still has melted (0 = barely, 1 = a low mound)")
-    ap.add_argument('--only', default='all', choices=['all', 'crumble', 'states'], help='render just one part')
+    ap.add_argument('--melt-stages', type=int, default=10, help='how many melt stages to render, from whole castle to low mound')
+    ap.add_argument('--only', default='all', choices=['all', 'crumble', 'melt'], help='render just one part')
     ap.add_argument('--save-blend', action='store_true', help='also save crumble.blend so you can open the scene in Blender')
     # frame big enough for the 4x4 castle plus the sand it throws out; the castle's back corner sits at 192,136
     ap.set_defaults(frame_w=384, frame_h=304, anchor_x=192, anchor_y=136, cols=5)
@@ -423,12 +430,11 @@ def main():
     fdir = os.path.join(out, 'frames')
     os.makedirs(fdir, exist_ok=True)
 
-    # intact: whole blocks, nothing broken. Also frame 0 of the crumble, so the animation starts from the same picture.
-    scene = fresh_scene(cfg)
-    build_castle(scene, cfg.seed, fractured=False)
-    intact = rs.render_frames(scene, [1], fdir, 'state_intact')
-
     if cfg.only in ('all', 'crumble'):
+        # frame 0: whole blocks, nothing broken
+        scene = fresh_scene(cfg)
+        build_castle(scene, cfg.seed, fractured=False)
+        intact = rs.render_frames(scene, [1], fdir, 'crumble_intact')
         cfg.sim_frames = 1 + cfg.step * (cfg.frames - 1)
         scene = fresh_scene(cfg)
         chunks = build_castle(scene, cfg.seed)
@@ -444,25 +450,18 @@ def main():
                       os.path.join(out, 'castle_crumble.png'), os.path.join(out, 'castle_crumble.json'), cfg,
                       extra={'kind': 'animation', 'footprint': {'cols': 4, 'rows': 4}, 'loop': False})
 
-    if cfg.only in ('all', 'states'):
-        paths = list(intact)
-        # cracked: chunks shrink a little about their own centres (dark gaps open up) and the upper ones shift
-        scene = fresh_scene(cfg)
-        rng = random.Random(cfg.seed + 2)
-        for ob in build_castle(scene, cfg.seed):
-            h = ob.location.z / (2.25 * ZU)                   # 0 at the sand, 1 at the top
-            ob.scale = (0.95, 0.95, 0.95)
-            ob.rotation_euler = Euler([math.radians(rng.uniform(-5, 5)) * h for _ in range(3)])
-            ob.location += Vector((rng.uniform(-0.03, 0.03) * h, rng.uniform(-0.03, 0.03) * h, -0.05 * h))
-            ob.modifiers['Round'].factor = 0.25 * h           # the top is already starting to slump
-        paths += rs.render_frames(scene, [1], fdir, 'state_cracked')
-        # half: the sea-facing half has MELTED - towers sagged into humps, sand run out into an apron. One wet mass, no chunks.
-        scene = fresh_scene(cfg)
-        add_melted_castle(scene, cfg.melt, cfg.seed)
-        paths += rs.render_frames(scene, [1], fdir, 'state_half')
-        rs.pack_sheet(paths, ['intact', 'cracked', 'half'],
-                      os.path.join(out, 'castle_states.png'), os.path.join(out, 'castle_states.json'), cfg,
-                      extra={'kind': 'states', 'footprint': {'cols': 4, 'rows': 4}})
+    if cfg.only in ('all', 'melt'):
+        # the melt run: the same castle at evenly spaced melt amounts, 0 (whole) to 1 (a low mound of wet sand)
+        n = max(2, cfg.melt_stages)
+        amounts = [i / (n - 1) for i in range(n)]
+        paths = []
+        for i, a in enumerate(amounts):
+            scene = fresh_scene(cfg)
+            add_melted_castle(scene, a, cfg.seed)
+            paths += rs.render_frames(scene, [1], fdir, 'melt_%02d' % i)
+        rs.pack_sheet(paths, ['melt_%02d' % i for i in range(n)],
+                      os.path.join(out, 'castle_melt.png'), os.path.join(out, 'castle_melt.json'), cfg,
+                      extra={'kind': 'stages', 'footprint': {'cols': 4, 'rows': 4}, 'amounts': [round(a, 4) for a in amounts]})
     print('[crumble_castle] done ->', out, flush=True)
 
 

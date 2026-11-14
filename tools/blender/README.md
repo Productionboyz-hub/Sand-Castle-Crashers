@@ -6,7 +6,7 @@ No add-ons, no extra installs: the scripts only use what ships inside Blender (t
 | File | What it does |
 |---|---|
 | `render_sprites.py` | Renders any `.blend` to a sprite sheet PNG + JSON. Sets the camera to match the game's `iso()` projection, transparent background, one fixed lighting rig. Also used as a library by the crumble test. |
-| `crumble_castle.py` | The crumble test. Builds a sandcastle on the game's 4 x 4 footprint, splits it into chunks, collapses it with rigid-body physics. To read as sand, a chunk rounds off and shrinks away once it moves, while a heap of loose sand rises underneath. Outputs a 20-frame animation and 3 stills (intact, cracked, half). The half still is not broken chunks: it is the castle melted from the sea side, as one mass of slumped wet sand. |
+| `crumble_castle.py` | The crumble test. Builds a sandcastle on the game's 4 x 4 footprint, splits it into chunks, collapses it with rigid-body physics. To read as sand, a chunk rounds off and shrinks away once it moves, while a heap of loose sand rises underneath. Outputs a 20-frame crumble animation and a run of melt stages (default 10): the castle as one mass of wet sand, sagging from the sea side until it is a low mound. Pick the melt stage by castle health. |
 | `render_sprites.ps1` | Windows wrapper: one command runs the crumble test. |
 
 ## Run it (Windows, PowerShell, from the repo folder)
@@ -17,13 +17,12 @@ No add-ons, no extra installs: the scripts only use what ships inside Blender (t
 ```
 
 Output lands in `tools\blender\out\` (ignored by git):
-`castle_crumble.png/.json`, `castle_states.png/.json`, and `frames\`.
+`castle_crumble.png/.json`, `castle_melt.png/.json`, and `frames\`.
 
 Useful switches: `-Seed 11` (a different collapse), `-Frames 24`, `-Scale 1` (half-size sheet),
-`-Only states`, `-SaveBlend` (writes `out\crumble.blend` to open in Blender), `-Gpu`.
+`-Only melt`, `-MeltStages 16`, `-SaveBlend` (writes `out\crumble.blend` to open in Blender), `-Gpu`.
 
-Look knobs (pass to `crumble_castle.py` after `--`): `--melt` (how far the half still has melted:
-0 = barely, 0.5 = default, 1 = a low mound), `--melt-frames` (how fast a moving chunk turns
+Look knobs (pass to `crumble_castle.py` after `--`): `--melt-stages`, `--melt-frames` (how fast a moving chunk turns
 to sand), `--clumps` (damp lumps left on the heap), `--mound-height`, `--mound-radius`, `--push`,
 `--friction`, `--step` (physics frames per rendered frame).
 

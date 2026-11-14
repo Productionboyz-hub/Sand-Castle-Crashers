@@ -1,6 +1,7 @@
 # render_sprites.ps1 - one command: build the sandcastle crumble test and render its sprite sheets.
 #
-#   .\tools\blender\render_sprites.ps1                 # full quality (about 20 frames + 3 stills)
+#   .\tools\blender\render_sprites.ps1                 # full quality (20 crumble frames + 10 melt stages)
+#   .\tools\blender\render_sprites.ps1 -Only melt      # just the melt stages
 #   .\tools\blender\render_sprites.ps1 -Quick          # fast draft to check it runs
 #   .\tools\blender\render_sprites.ps1 -Seed 11        # a different collapse
 #
@@ -12,7 +13,8 @@ param(
     [int]$Frames     = 20,      # frames in the crumble animation
     [int]$Samples    = 48,      # render quality
     [int]$Seed       = 7,
-    [ValidateSet("all", "crumble", "states")][string]$Only = "all",
+    [ValidateSet("all", "crumble", "melt")][string]$Only = "all",
+    [int]$MeltStages = 10,     # melt stages, from whole castle to low mound
     [switch]$Gpu,               # render on the graphics card if Cycles is set up for it
     [switch]$SaveBlend,         # also save out\crumble.blend to open in Blender
     [switch]$Quick              # draft: half size, few samples
@@ -31,7 +33,7 @@ Push-Location $PSScriptRoot
 try {
     $blArgs = @("-b", "--python-exit-code", "1", "-P", "crumble_castle.py", "--",
         "--out", $Out, "--scale", $Scale, "--frames", $Frames, "--samples", $Samples,
-        "--seed", $Seed, "--only", $Only)
+        "--seed", $Seed, "--only", $Only, "--melt-stages", $MeltStages)
     if ($Gpu)       { $blArgs += @("--device", "GPU") }
     if ($SaveBlend) { $blArgs += "--save-blend" }
     Write-Host "Blender: $Blender"
