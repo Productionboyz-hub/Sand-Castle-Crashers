@@ -49,6 +49,24 @@ try {
     $out = $out -replace "`r`n", "`n"
     [System.IO.File]::WriteAllText("$root\public\index.html", $out, (New-Object System.Text.UTF8Encoding $false))
 
+    # ASSETS - files the game loads next to index.html. Named one by one, never a whole folder.
+    # public\assets is rebuilt from scratch each time so nothing stale or stray is ever served.
+    $assets = @('assets/sprites/castle_melt.png')
+    $pubAssets = Join-Path (Join-Path $root 'public') 'assets'
+    if (Test-Path $pubAssets) { Remove-Item $pubAssets -Recurse -Force }
+    foreach ($a in $assets) {
+        git ls-files --error-unmatch -- $a 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "ABORT: $a is not committed in this repo." -ForegroundColor Red
+            exit 1
+        }
+        $from = Join-Path $root $a
+        $to   = Join-Path (Join-Path $root 'public') $a
+        New-Item -ItemType Directory -Force -Path (Split-Path $to -Parent) | Out-Null
+        Copy-Item $from $to -Force
+        Write-Host "  asset: $a ($((Get-Item $to).Length) bytes)"
+    }
+
     # DEPLOY
     Write-Host "Deploying..." -ForegroundColor Cyan
     cmd /c "cd /d `"$root`" && wrangler deploy"
@@ -65,12 +83,29 @@ try {
     $cache = $r.Headers['cf-cache-status']
     $found = [regex]::Matches($r.Content, 'build ([a-f0-9]{7})') | ForEach-Object { $_.Groups[1].Value }
 
+    # the assets must be served too, byte for byte the size of the local files
+    $assetsOk = $true
+    foreach ($a in $assets) {
+        $want = (Get-Item (Join-Path $root $a)).Length
+        $got  = -1
+        try {
+            $ar  = Invoke-WebRequest ($url + $a + "?v=$sha") -Headers @{"Cache-Control"="no-cache"; "Pragma"="no-cache"} -UseBasicParsing
+            $got = $ar.RawContentLength
+        } catch { }
+        if ($got -ne $want) { $assetsOk = $false }
+        Write-Host "  asset    : $a  local $want bytes, served $got bytes"
+    }
+
     Write-Host ""
     Write-Host "  expected : $sha"
     Write-Host "  found    : $($found -join ', ')"
     Write-Host "  cache    : $cache"
     Write-Host ""
 
+    if (-not $assetsOk) {
+        Write-Host "RECEIPT FAILED - an asset is missing or the wrong size on the live site. Do NOT device pass." -ForegroundColor Red
+        exit 1
+    }
     if ($found.Count -eq 2 -and ($found | Where-Object { $_ -ne $sha }).Count -eq 0) {
         Write-Host "RECEIPT VERIFIED - $sha is live. Device pass next." -ForegroundColor Green
         Copy-Item "$root\sandcastle_iso2.html" "G:\My Drive\Sand Castle Crashers Sync\sandcastle_iso2.html" -Force

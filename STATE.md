@@ -111,8 +111,12 @@ Sixth commit, 2026-11-13 - cleaner truck size (NOT water work; on this
   persistent state castleMeltPos is in BOTH restart reset lists.
   Tests: tools/blender/probe_castle_sprite.cjs 9/9 on the combined
   build, test_surge3 15/15 (one run each). Other water probes not re-run.
-  Open: deploy_scc.ps1 does not copy assets/ into public/ yet (live would
-  show the drawn castle); image is heavy for phones; the water branch's
+  deploy_scc.ps1 now copies the named asset (assets/sprites/
+  castle_melt.png) into public/, rebuilding public/assets each time, and
+  the receipt checks the served image is the same size as the local one.
+  Copy block tested in a throwaway clone; the full script has NOT been
+  run (no deploy).
+  Open: image is heavy for phones; the water branch's
   own castle melt (castleCutZ / castleShown) is now only the fallback and
   should be unified; sprite sizes are constants (MELT_*), re-render only
   with -Scale 2 -MeltStages 10 -Seed 7; not checked on a phone or at
