@@ -41,6 +41,18 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "Blender exited with code $LASTEXITCODE" }
     Write-Host ""
     Write-Host "Done. Sprite sheets are in: $(Join-Path $PSScriptRoot $Out)"
+    # the game loads the melt run from assets\sprites\castle_melt.png - put the fresh sheet there
+    $melt = Join-Path (Join-Path $PSScriptRoot $Out) "castle_melt.png"
+    if (($Only -ne "crumble") -and (Test-Path $melt)) {
+        if ($Scale -ne 2 -or $MeltStages -ne 10) {
+            Write-Host "Not copied into the game: it expects -Scale 2 and -MeltStages 10 (see MELT_ constants in sandcastle_iso2.html)."
+        } else {
+            $dest = Join-Path $PSScriptRoot "..\..\assets\sprites"
+            New-Item -ItemType Directory -Force -Path $dest | Out-Null
+            Copy-Item $melt (Join-Path $dest "castle_melt.png") -Force
+            Write-Host "Copied castle_melt.png into assets\sprites for the game."
+        }
+    }
 }
 finally {
     Pop-Location
