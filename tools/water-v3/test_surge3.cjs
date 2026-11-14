@@ -71,8 +71,8 @@ async function oneBigWave(p, setup) {
   const rs = r.ringPour.concat(r.ringSteps);
   const rmid = rs.filter(v => v > 0.02 && v < 0.98);
   check(rs[0] === 0 && new Set(rmid).size >= 6 && rs.every((v, i) => i === 0 || v >= rs[i - 1] - 0.001) && rs[rs.length - 1] > 0.6, 'S2b #2 the castle ring POURS round: starts dry and rises through partial levels (never a snap)', rs.filter((v, i) => i % 3 === 0).slice(0, 16));
-  const melt = await p.evaluate(() => { const cuts = h => { pieceDrawHealth = h; let top = 0; const o = isoBlock; isoBlock = (c, r2, z, hh) => { top = Math.max(top, z + hh); }; drawPlacedPiece('wall-tall', 12, 12, 'full'); isoBlock = o; pieceDrawHealth = 100; return +top.toFixed(2); }; return { full: cuts(100), at60: cuts(60), at10: cuts(10) }; });
-  check(melt.full === 1.9 && melt.at60 < melt.full && melt.at10 < melt.at60 && melt.at10 > 0.3, 'S2c #3 walls MELT: drawn height drops with health', melt);
+  const melt = await p.evaluate(() => { /* measures the code-drawn fallback walls: the sprite walls (tools/blender/probe_wall_sprites.cjs covers their melt) are switched off for this check */ const cuts = h => { const wr = typeof wallsReady !== 'undefined' && wallsReady; if (wr) wallsReady = false; pieceDrawHealth = h; let top = 0; const o = isoBlock; isoBlock = (c, r2, z, hh) => { top = Math.max(top, z + hh); }; drawPlacedPiece('wall-tall', 12, 12, 'full'); isoBlock = o; pieceDrawHealth = 100; if (wr) wallsReady = true; return +top.toFixed(2); }; return { full: cuts(100), at60: cuts(60), at10: cuts(10) }; });
+  check(melt.full === 1.9 && melt.at60 < melt.full && melt.at10 < melt.at60 && melt.at10 > 0.3, 'S2c #3 walls MELT (code-drawn fallback): drawn height drops with health', melt);
   await ctx.close();
   // S3 castle takes it; castle melts
   ({ ctx, p, errs } = await fresh(b));

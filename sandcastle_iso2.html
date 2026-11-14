@@ -2588,7 +2588,66 @@ function drawHealthMeter(p) {
   ctx.restore();
 }
 
+// ── WALL SPRITES (melt run) ───────────────────────────────────────
+// Pre-rendered in Blender (tools/blender/melt_walls.py) to match the sprite castle: one sheet, a row per wall
+// (small, medium, tall) and WALLS_STAGES columns, 0 = whole wall, last = a low mound of wet sand. The column
+// follows the piece's health; neighbouring stages are cross-faded so a wall sags smoothly as it decays.
+// If the image is missing or still loading, the code-drawn walls below are used instead.
+// These numbers come from walls_melt.json - change them if the sheet is re-rendered at another size or count.
+const WALLS_SRC    = 'assets/sprites/walls_melt.png';
+const WALLS_FW     = 256, WALLS_FH = 224;   // one frame in the sheet, px
+const WALLS_AX     = 128, WALLS_AY = 124;   // the point inside a frame that sits on iso(col, row, 0), px
+const WALLS_SCALE  = 2;                     // sheet px per game px at zoom 1
+const WALLS_STAGES = 8;
+const WALLS_ROW    = { 'wall-small': 0, 'wall-medium': 1, 'wall-tall': 2 };
+const WALLS_MIX_STEPS = 6;                  // cross-fade steps between two stages
+const WALLS_MIX_MAX   = 40;                 // mixed frames kept ready (walls of the same kind and health share one)
+const wallsImg = new Image();
+let wallsReady = false;
+wallsImg.onload = function () { wallsReady = wallsImg.width >= WALLS_FW * WALLS_STAGES && wallsImg.height >= WALLS_FH * 3; };
+wallsImg.src = WALLS_SRC;
+const wallsMix = new Map();                 // key -> canvas holding two neighbouring stages, mixed
+
+function drawWallSprite(id, col, row, health) {
+  const wr = WALLS_ROW[id];
+  const pos = (1 - Math.max(0, Math.min(100, health)) / 100) * (WALLS_STAGES - 1);
+  const step = Math.round(pos * WALLS_MIX_STEPS);
+  const i = Math.min(WALLS_STAGES - 1, Math.floor(step / WALLS_MIX_STEPS)), f = step / WALLS_MIX_STEPS - i;
+  const a = iso(col, row, 0), k = camZoom / WALLS_SCALE;
+  const dx = a.x - WALLS_AX * k, dy = a.y - WALLS_AY * k, dw = WALLS_FW * k, dh = WALLS_FH * k;
+  if (f <= 0 || i + 1 >= WALLS_STAGES) {     // resting on a whole stage: straight from the sheet
+    ctx.drawImage(wallsImg, i * WALLS_FW, wr * WALLS_FH, WALLS_FW, WALLS_FH, dx, dy, dw, dh);
+    return;
+  }
+  const key = wr * 1000 + step;
+  let cv = wallsMix.get(key);
+  if (cv) {
+    wallsMix.delete(key);                    // move to the fresh end
+  } else {
+    if (wallsMix.size >= WALLS_MIX_MAX) {    // reuse the one unused for longest
+      const oldest = wallsMix.keys().next().value;
+      cv = wallsMix.get(oldest);
+      wallsMix.delete(oldest);
+    } else {
+      cv = document.createElement('canvas');
+      cv.width = WALLS_FW; cv.height = WALLS_FH;
+    }
+    const m = cv.getContext('2d');
+    m.globalCompositeOperation = 'source-over';
+    m.globalAlpha = 1;
+    m.clearRect(0, 0, WALLS_FW, WALLS_FH);
+    m.globalAlpha = 1 - f;
+    m.drawImage(wallsImg, i * WALLS_FW, wr * WALLS_FH, WALLS_FW, WALLS_FH, 0, 0, WALLS_FW, WALLS_FH);
+    m.globalCompositeOperation = 'lighter';  // adds, so the two stages cross-fade exactly
+    m.globalAlpha = f;
+    m.drawImage(wallsImg, (i + 1) * WALLS_FW, wr * WALLS_FH, WALLS_FW, WALLS_FH, 0, 0, WALLS_FW, WALLS_FH);
+  }
+  wallsMix.set(key, cv);
+  ctx.drawImage(cv, dx, dy, dw, dh);
+}
+
 function drawPlacedPiece(id, col, row, state) {
+  if (wallsReady && WALLS_ROW[id] !== undefined) { drawWallSprite(id, col, row, pieceDrawHealth); return; }   // sprite walls; the wall cases below are the fallback
   // v0.9: walls melt - cut off above a height that drops with the piece's health (ghost previews draw at full height)
   const _fullH = { 'wall-small': 0.6, 'wall-medium': 1.38, 'wall-tall': 1.9 }[id];
   meltCutZ = _fullH ? _fullH * (0.22 + 0.78 * pieceDrawHealth / 100) : 1e9;

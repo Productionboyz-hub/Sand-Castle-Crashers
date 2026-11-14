@@ -123,8 +123,40 @@ Sixth commit, 2026-11-13 - cleaner truck size (NOT water work; on this
   code-drawn blocks - no grain, soft edges or shadows like the castle.
   Start Wave checked on the combined build: works at desktop, iPad and
   iPhone sizes, served and opened as a file (headless, not a device).
-  NEXT for this work: render the three walls in Blender to match the
-  castle, including their melt with health.
+  Sprite walls (same day, later session): DONE - the three walls are
+  rendered in Blender and drawn by the game. tools/blender/melt_walls.py
+  builds each wall the castle's way (height grid, same sand / light /
+  camera) and writes walls_melt.png: a row per wall (small, medium,
+  tall), 8 melt stages each, whole wall -> low mound, sea side first.
+  Shapes: small 0.6 plain block; medium 1.1 + four merlons to 1.38; tall
+  1.6 + four merlons to 1.9 (the code walls had 2 and 3 offset blocks).
+  render_sprites.ps1: -Only walls, -WallStages; plain run does castle +
+  walls and copies both sheets into assets/sprites. Committed sheet:
+  assets/sprites/walls_melt.png (0.8 MB, 2048 x 672).
+  Game: new section WALL SPRITES (melt run) above drawPlacedPiece().
+  Stage follows piece health (100 -> stage 0, 0 -> stage 7), neighbouring
+  stages cross-faded in 6 steps, mixed frames cached (max 40, wallsMix -
+  a drawing cache, not game state, so not in the restart lists). DRAWING
+  ONLY: health, decay, damage untouched. Without the image the old
+  code-drawn walls are used. Toolbox icons and the blue placement ghost
+  are still code-drawn. The old worn/damaged fade and red tile tint
+  still draw on top of the sprites - may want removing now the melt
+  shows health.
+  Tests: tools/blender/probe_wall_sprites.cjs 8/8 (fails W1 on the
+  previous commit - no sheet); probe_castle_sprite 10/10; test_surge3
+  15/15. Test change, stated plainly: test_surge3 S2c measured wall melt
+  by hooking isoBlock, which sprite walls do not call (it FAILED with
+  the sheet present). It now switches the sprite walls off and checks
+  the code-drawn fallback; the sprite melt is covered by W2/W3. Castle
+  sheet unaffected: crumble_castle.py refactor gives a byte-identical
+  draft render. Wrapper run end to end here under pwsh with the bpy
+  module standing in for blender.exe - NOT yet run on J's PC.
+  NOT DONE: deploy_scc.ps1 does not copy walls_melt.png into public/
+  yet (its $assets list names only castle_melt.png) - add it before any
+  deploy or the live site silently uses the code-drawn walls. Not
+  checked on a device or at phone sizes.
+  NEXT for this work: J looks at the walls on PC; then decide on the
+  fade/tint, sprite icons, and the deploy script line.
   Open: image is heavy for phones; the water branch's
   own castle melt (castleCutZ / castleShown) is now only the fallback and
   should be unified; sprite sizes are constants (MELT_*), re-render only
