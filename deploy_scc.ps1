@@ -51,7 +51,7 @@ try {
 
     # ASSETS - files the game loads next to index.html. Named one by one, never a whole folder.
     # public\assets is rebuilt from scratch each time so nothing stale or stray is ever served.
-    $assets = @('assets/sprites/castle_melt.png')
+    $assets = @('assets/sprites/castle_melt.png', 'assets/sprites/walls_melt.png')
     $pubAssets = Join-Path (Join-Path $root 'public') 'assets'
     if (Test-Path $pubAssets) { Remove-Item $pubAssets -Recurse -Force }
     foreach ($a in $assets) {

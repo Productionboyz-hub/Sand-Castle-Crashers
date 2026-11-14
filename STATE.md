@@ -138,10 +138,7 @@ Sixth commit, 2026-11-13 - cleaner truck size (NOT water work; on this
   stages cross-faded in 6 steps, mixed frames cached (max 40, wallsMix -
   a drawing cache, not game state, so not in the restart lists). DRAWING
   ONLY: health, decay, damage untouched. Without the image the old
-  code-drawn walls are used. Toolbox icons and the blue placement ghost
-  are still code-drawn. The old worn/damaged fade and red tile tint
-  still draw on top of the sprites - may want removing now the melt
-  shows health.
+  code-drawn walls are used.
   Tests: tools/blender/probe_wall_sprites.cjs 8/8 (fails W1 on the
   previous commit - no sheet); probe_castle_sprite 10/10; test_surge3
   15/15. Test change, stated plainly: test_surge3 S2c measured wall melt
@@ -151,12 +148,23 @@ Sixth commit, 2026-11-13 - cleaner truck size (NOT water work; on this
   sheet unaffected: crumble_castle.py refactor gives a byte-identical
   draft render. Wrapper run end to end here under pwsh with the bpy
   module standing in for blender.exe - NOT yet run on J's PC.
-  NOT DONE: deploy_scc.ps1 does not copy walls_melt.png into public/
-  yet (its $assets list names only castle_melt.png) - add it before any
-  deploy or the live site silently uses the code-drawn walls. Not
-  checked on a device or at phone sizes.
-  NEXT for this work: J looks at the walls on PC; then decide on the
-  fade/tint, sprite icons, and the deploy script line.
+  Follow-up, J said yes to all three (same session):
+  (1) deploy_scc.ps1 $assets list now names walls_melt.png too (copy +
+  served-size check). Script NOT run (no deploy).
+  (2) Sprite walls are drawn solid: no worn/damaged fade, no crumbling
+  flicker, no red tile tint - the melt shows health. Moats, drawbridge
+  and the code-drawn fallback walls keep the old fade/tint.
+  (3) Toolbox icons and the drag badge for the three walls come from the
+  sheet (drawWallIcon(), stage 0); buttons are redrawn when the sheet
+  loads. WALL SPRITES section moved above PIECE CATALOGUE (icons need it
+  at load). The blue placement ghost is still code-drawn blocks.
+  Tests: probe_wall_sprites 11/11, probe_castle_sprite 10/10,
+  test_surge3 15/15. Probe change, stated plainly: W3 used to require a
+  wall at 5 health to read lower than at 30; without the fade the flat
+  mound's back edge reads the same on the measured column, so 5 is now
+  only required to read no taller than 30 (100 > 60 > 30 still strict).
+  Not checked on a device or at phone sizes.
+  NEXT for this work: J looks at the walls on PC.
   Open: image is heavy for phones; the water branch's
   own castle melt (castleCutZ / castleShown) is now only the fallback and
   should be unified; sprite sizes are constants (MELT_*), re-render only
