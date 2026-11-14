@@ -172,7 +172,11 @@ def flag_heights(amount, seed, res=0.02):
 def add_melted_castle(scene, amount, seed, res=0.02):
     """The castle as ONE mass of wet sand, melted from the sea side (high col + row) toward the back.
     No chunks, no physics: a mesh built from melt_heightfield()."""
-    C, R, H, wet = melt_heightfield(amount, seed, res)
+    return add_heightfield(scene, *melt_heightfield(amount, seed, res))
+
+
+def add_heightfield(scene, C, R, H, wet):
+    """One smooth mass of sand from a height grid (col, row, height in Blender units, wetness 0..1). Also used by melt_walls.py."""
     n = C.shape[0]
     # mesh: one quad per grid cell that has any sand in it
     keep = (H[:-1, :-1] > 0) | (H[1:, :-1] > 0) | (H[:-1, 1:] > 0) | (H[1:, 1:] > 0)
