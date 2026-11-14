@@ -7,7 +7,7 @@
 # pull it down. To read as SAND rather than stone: once a chunk starts to move it rounds off, goes lumpy and
 # shrinks away, while a mound of loose sand builds up underneath. Writes into the output folder:
 #   castle_crumble.png / .json   the collapse animation (default 20 frames; frame 0 is the intact castle)
-#   castle_states.png  / .json   3 stills: intact, cracked, half
+#   castle_states.png  / .json   3 stills: intact, cracked, half (half = the sea side MELTED: slumped wet sand)
 #   frames/                      the individual frames
 # Everything is seeded, so the same command gives the same sprites.
 import argparse
@@ -17,6 +17,7 @@ import random
 import sys
 
 import bpy
+import numpy as np
 import bmesh  # noqa: E402  (bmesh needs bpy loaded first when run outside Blender)
 from mathutils import Euler, Vector, noise
 
@@ -80,6 +81,85 @@ def sand_material(name, color, bump):
     nt.links.new(grain.outputs['Fac'], bmp.inputs['Height'])
     nt.links.new(bmp.outputs['Normal'], bsdf.inputs['Normal'])
     return mat
+
+
+def melt_material():
+    """Sand whose colour runs from sun-dried to dark and damp, by the mesh's per-point 'wet' value (0..1)."""
+    mat = sand_material('SandMelt', (0.80, 0.67, 0.46, 1.0), 0.5)
+    nt = mat.node_tree
+    hsv = next(n for n in nt.nodes if n.type == 'HUE_SAT')
+    attr = nt.nodes.new('ShaderNodeAttribute')
+    attr.attribute_name = 'wet'
+    mixc = nt.nodes.new('ShaderNodeMix')
+    mixc.data_type = 'RGBA'
+    sock = lambda socks, ident: next(k for k in socks if k.identifier == ident)   # noqa: E731
+    sock(mixc.inputs, 'A_Color').default_value = (0.80, 0.67, 0.46, 1.0)          # dry
+    sock(mixc.inputs, 'B_Color').default_value = (0.60, 0.46, 0.28, 1.0)          # damp
+    nt.links.new(attr.outputs['Fac'], sock(mixc.inputs, 'Factor_Float'))
+    nt.links.new(sock(mixc.outputs, 'Result_Color'), hsv.inputs['Color'])
+    return mat
+
+
+def _blur(a, sigma_cells):
+    """Gaussian blur of a 2D array (separable). Keeps the total, so melted sand spreads out, it does not vanish."""
+    if sigma_cells < 0.3:
+        return a
+    r = int(math.ceil(3 * sigma_cells))
+    k = np.exp(-0.5 * (np.arange(-r, r + 1) / sigma_cells) ** 2)
+    k /= k.sum()
+    a = np.apply_along_axis(lambda v: np.convolve(np.pad(v, r, mode='edge'), k, mode='valid'), 0, a)
+    return np.apply_along_axis(lambda v: np.convolve(np.pad(v, r, mode='edge'), k, mode='valid'), 1, a)
+
+
+def add_melted_castle(scene, amount, seed, res=0.02):
+    """The castle as ONE mass of wet sand, melted from the sea side (high col + row) toward the back.
+    amount 0 = barely softened, 0.5 = the sea-facing half has slumped, 1 = the whole castle is a low mound.
+    Built as a height map: every point is the castle's height, blurred and lowered by how melted it is there,
+    so towers sag into rounded humps and their sand runs out into an apron. No chunks, no physics."""
+    lo, hi = -1.6, 5.6
+    n = int(round((hi - lo) / res)) + 1
+    ax = np.linspace(lo, hi, n)
+    C, R = np.meshgrid(ax, ax, indexing='ij')                 # col, row of every grid point
+    H0 = np.zeros((n, n))
+    for (c0, c1, r0, r1, z0, z1, _n) in castle_blocks():
+        inside = (C >= c0) & (C <= c1) & (R >= r0) & (R <= r1)
+        H0[inside] = np.maximum(H0[inside], z1 * ZU)
+    ph = seed * 0.37
+    wob = 0.55 * np.sin(1.7 * C + 0.6 + ph) * np.cos(1.3 * R + 2.1 - ph) + 0.35 * np.sin(3.1 * R - 1.2 * C + ph)
+    start = 7.4 - 8.8 * amount                                # where along col+row the melting begins
+    t = np.clip((C + R + wob - start) / 4.2, 0.0, 1.0)
+    m = t * t * (3 - 2 * t)                                   # melt 0..1 at each point
+    # four versions of the castle, from crisp to a puddle; each point picks between them by how melted it is
+    levels = [_blur(H0, s / res) for s in (0.035, 0.16, 0.40, 0.80)]
+    u = m * (len(levels) - 1)
+    i0 = np.minimum(u.astype(int), len(levels) - 2)
+    f = u - i0
+    H = np.zeros_like(H0)
+    for i in range(len(levels) - 1):
+        sel = i0 == i
+        H[sel] = (levels[i] * (1 - f) + levels[i + 1] * f)[sel]
+    H *= 1.0 - 0.30 * m                                       # wet sand packs down as it slumps
+    H += 0.012 * m * np.sin(9.0 * C + 2.0 * np.sin(4.0 * R + ph)) * np.clip(H * 6, 0, 1)   # soft runnels where it flowed
+    H = np.maximum(0.0, H - 0.045 * m)                        # the apron ends in a soft lip, not an endless thin film
+    H[H < 0.004] = 0.0
+    wet = np.clip(0.15 + 0.95 * m, 0.0, 1.0)
+    # mesh: one quad per grid cell that has any sand in it
+    keep = (H[:-1, :-1] > 0) | (H[1:, :-1] > 0) | (H[:-1, 1:] > 0) | (H[1:, 1:] > 0)
+    idx = np.arange(n * n).reshape(n, n)
+    quads = np.stack([idx[:-1, :-1][keep], idx[1:, :-1][keep], idx[1:, 1:][keep], idx[:-1, 1:][keep]], axis=1)
+    used = np.unique(quads)
+    remap = np.full(n * n, -1, dtype=np.int64)
+    remap[used] = np.arange(len(used))
+    verts = np.stack([C.ravel()[used], -R.ravel()[used], H.ravel()[used]], axis=1)
+    me = bpy.data.meshes.new('melted')
+    me.from_pydata(verts.tolist(), [], remap[quads].tolist())
+    me.polygons.foreach_set('use_smooth', [True] * len(me.polygons))
+    me.attributes.new('wet', 'FLOAT', 'POINT').data.foreach_set('value', wet.ravel()[used])
+    me.materials.append(melt_material())
+    me.update()
+    ob = bpy.data.objects.new('melted', me)
+    scene.collection.objects.link(ob)
+    return ob
 
 
 def sand_materials():
@@ -333,6 +413,7 @@ def main():
     ap.add_argument('--clumps', type=int, default=16, help='number of damp clumps left on the heap (0 = smooth heap)')
     ap.add_argument('--mound-height', type=float, default=1.1, help='height of the final sand heap, in game z units')
     ap.add_argument('--mound-radius', type=float, default=2.9, help='radius of the final sand heap, in tiles')
+    ap.add_argument('--melt', type=float, default=0.5, help="how far the 'half' still has melted (0 = barely, 1 = a low mound)")
     ap.add_argument('--only', default='all', choices=['all', 'crumble', 'states'], help='render just one part')
     ap.add_argument('--save-blend', action='store_true', help='also save crumble.blend so you can open the scene in Blender')
     # frame big enough for the 4x4 castle plus the sand it throws out; the castle's back corner sits at 192,136
@@ -375,25 +456,10 @@ def main():
             ob.location += Vector((rng.uniform(-0.03, 0.03) * h, rng.uniform(-0.03, 0.03) * h, -0.05 * h))
             ob.modifiers['Round'].factor = 0.25 * h           # the top is already starting to slump
         paths += rs.render_frames(scene, [1], fdir, 'state_cracked')
-        # half: the sea-facing half above the base falls, crumbles and comes to rest as a heap; the rest stands
-        cfg.sim_frames = 70
+        # half: the sea-facing half has MELTED - towers sagged into humps, sand run out into an apron. One wet mass, no chunks.
         scene = fresh_scene(cfg)
-        chunks = build_castle(scene, cfg.seed)
-        falls = lambda ob: ob.location.z > 0.42 * ZU and (ob.location.x - ob.location.y) > 4.0   # noqa: E731
-        fallen = [ob for ob in chunks if falls(ob)]
-        full_push = cfg.push
-        cfg.push = full_push * 0.5
-        add_physics(scene, chunks, cfg, falls)
-        cfg.push = full_push
-        crumble_to_sand(scene, fallen, cfg, cfg.sim_frames - 24)
-        for ob in chunks:                                     # what still stands has slumped: softer, a little lumpy
-            if ob not in fallen:
-                ob.modifiers['Subdiv'].levels = ob.modifiers['Subdiv'].render_levels = 3
-                ob.modifiers['Round'].factor = 1.0
-                ob.modifiers['Lump'].strength = 0.07
-        mound = add_mound(scene, (2.9, -2.9), 2.1, 0.95 * ZU, cfg.seed + 5, cfg.clumps // 2)
-        grow_mound(mound, 4, cfg.sim_frames - 8)
-        paths += rs.render_frames(scene, [cfg.sim_frames], fdir, 'state_half')
+        add_melted_castle(scene, cfg.melt, cfg.seed)
+        paths += rs.render_frames(scene, [1], fdir, 'state_half')
         rs.pack_sheet(paths, ['intact', 'cracked', 'half'],
                       os.path.join(out, 'castle_states.png'), os.path.join(out, 'castle_states.json'), cfg,
                       extra={'kind': 'states', 'footprint': {'cols': 4, 'rows': 4}})
