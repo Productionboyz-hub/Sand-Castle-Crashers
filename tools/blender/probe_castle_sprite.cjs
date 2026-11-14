@@ -42,12 +42,24 @@ const check = (ok, name, info) => { if (!ok) fail++; console.log('  ' + (ok ? 'P
     return { hp: castleHP, pos: castleMeltPos, over: gameOver };
   });
   check(rs.over === false && rs.hp === 100 && rs.pos < 0.01, 'C5 restart puts the castle back whole', rs);
+  // placed walls use the castle's sand colours, not the old yellow
+  const wall = await p.evaluate(async () => {
+    castleHP = 100; placedPieces.length = 0;
+    placedPieces.push({ id: 'wall-tall', col: 10, row: 4, health: 100, decayTimer: 0 });
+    await new Promise(res => requestAnimationFrame(() => requestAnimationFrame(res)));
+    const g = canvas.getContext('2d'), at = (c, r2, z) => { const q = iso(c, r2, z), d = g.getImageData(Math.round(q.x), Math.round(q.y), 1, 1).data; return [d[0], d[1], d[2]]; };
+    const out = { lit: at(10.5, 5, 0.6), shadow: at(11, 4.5, 0.6) };
+    placedPieces.length = 0;
+    return out;
+  });
+  check(wall.lit[2] > 160 && wall.shadow[2] > 130 && wall.lit[0] - wall.lit[2] < 70 && wall.lit[0] > wall.shadow[0] + 25,
+    'C10 a placed wall is drawn in the castle sand colours (pale, lit face lighter than shadowed face), not yellow', wall);
   check(errs.length === 0, 'C6 no page errors (with sprite)', errs);
   await ctx.close();
   ({ p, errs, ctx } = await open(withoutUrl));
   const f = await p.evaluate(() => ({ ready: meltReady, hasFallback: typeof isoBlock === 'function' }));
   const px = await p.evaluate(() => { const q = iso(7, 7, 0.2), d = canvas.getContext('2d').getImageData(Math.round(q.x), Math.round(q.y), 1, 1).data; return [d[0], d[1], d[2]]; });
-  check(f.ready === false && px[0] > 120 && px[0] - px[2] > 90, 'C7 no sprite file: the old drawn castle is used (yellow block at the front corner)', { ready: f.ready, px });
+  check(f.ready === false && Math.abs(px[0] - 185) < 14 && Math.abs(px[1] - 172) < 14 && Math.abs(px[2] - 149) < 14, 'C7 no sprite file: the code-drawn castle is used, in the same sand colours (shadowed block face at the front corner)', { ready: f.ready, px });
   check(errs.length === 0, 'C8 no page errors (without sprite)', errs);
   await b.close();
   process.exit(fail ? 1 : 0);

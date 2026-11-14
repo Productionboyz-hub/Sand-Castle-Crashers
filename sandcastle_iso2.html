@@ -946,14 +946,41 @@ function drawTrenchOnTile(col, row, D, level, damp, wall, floor, c1, c2) {
 
 // Castle + walls melt: blocks are cut off above a height that drops with health.
 function castleCutZ() { return 0.5 + 1.95 * Math.max(0, castleShown) / CASTLE_MAX_HP; }
+// ── SAND COLOURS (pieces match the sprite castle) ─────────────────
+// Walls, their toolbox icons and the fallback castle were authored in bright yellows. sandTone() turns each of
+// those into the sprite castle's sand: same face (top / sun-lit left / shadowed right), same relative
+// brightness between tiers, new colour. Anything that is not sand-yellow (wood, water, ghost blue) passes through.
+const SAND_FACE = [   // [authored reference, sprite-castle colour] for top, left (lit), right (shadow)
+  [[218, 184, 74], [226, 207, 172]],
+  [[184, 144, 48], [238, 218, 183]],
+  [[144, 104, 16], [185, 172, 149]],
+];
+const _sandCache = {};
+function sandTone(face, hex) {
+  const key = face + hex;
+  if (_sandCache[key] !== undefined) return _sandCache[key];
+  let out = hex;
+  if (typeof hex === 'string' && hex.charAt(0) === '#' && hex.length === 7) {
+    const r = parseInt(hex.substr(1, 2), 16), g = parseInt(hex.substr(3, 2), 16), b = parseInt(hex.substr(5, 2), 16);
+    if (r >= 120 && g / r >= 0.7 && b / r <= 0.45) {                 // the sand-yellow family only
+      const ref = SAND_FACE[face][0], to = SAND_FACE[face][1];
+      const k = Math.max(0.9, Math.min(1.08, (r + g + b) / (ref[0] + ref[1] + ref[2])));
+      out = 'rgb(' + Math.min(255, Math.round(to[0] * k)) + ',' + Math.min(255, Math.round(to[1] * k)) + ',' + Math.min(255, Math.round(to[2] * k)) + ')';
+    }
+  }
+  _sandCache[key] = out;
+  return out;
+}
+function sandBlock(c, r, z, h, a, b, d) { isoBlock(c, r, z, h, sandTone(0, a), sandTone(1, b), sandTone(2, d)); }
+
 function castleBlock(c, r, z, h, a, b, d) {
   const cut = castleCutZ();
   if (z >= cut) return;
-  isoBlock(c, r, z, Math.min(h, cut - z), a, b, d);
+  sandBlock(c, r, z, Math.min(h, cut - z), a, b, d);
 }
 function meltBlock(c, r, z, h, a, b, d) {
   if (z >= meltCutZ) return;
-  isoBlock(c, r, z, Math.min(h, meltCutZ - z), a, b, d);
+  sandBlock(c, r, z, Math.min(h, meltCutZ - z), a, b, d);
 }
 
 // ── Sand texture offscreen ────────────────────────────────────────
@@ -1552,13 +1579,13 @@ function miniBlock(ctx, cx, cy, tw, th, col, row, z, h, topC, leftC, rightC) {
   const pf0 = miniIso(cx,cy,tw,th, col,   row+1, z);
   const pb0 = miniIso(cx,cy,tw,th, col+1, row+1, z);
 
-  ctx.fillStyle=topC; ctx.beginPath();
+  ctx.fillStyle=sandTone(0, topC); ctx.beginPath();
   ctx.moveTo(p.x,p.y);ctx.lineTo(pr.x,pr.y);ctx.lineTo(pb.x,pb.y);ctx.lineTo(pf.x,pf.y);
   ctx.closePath();ctx.fill();
-  ctx.fillStyle=leftC; ctx.beginPath();
+  ctx.fillStyle=sandTone(1, leftC); ctx.beginPath();
   ctx.moveTo(pf.x,pf.y);ctx.lineTo(pb.x,pb.y);ctx.lineTo(pb0.x,pb0.y);ctx.lineTo(pf0.x,pf0.y);
   ctx.closePath();ctx.fill();
-  ctx.fillStyle=rightC; ctx.beginPath();
+  ctx.fillStyle=sandTone(2, rightC); ctx.beginPath();
   ctx.moveTo(pr.x,pr.y);ctx.lineTo(pb.x,pb.y);ctx.lineTo(pb0.x,pb0.y);ctx.lineTo(pr0.x,pr0.y);
   ctx.closePath();ctx.fill();
 }
@@ -2714,18 +2741,18 @@ function drawGhost(t) {
 function drawPieceGhost(id, col, row) {
   switch(id) {
     case 'wall-small':
-      isoBlock(col,row, 0,0.1,'#dab84a','#b89030','#906810');
+      sandBlock(col,row, 0,0.1,'#dab84a','#b89030','#906810');
       isoBlock(col,row, 0.1,0.5,'rgba(180,200,255,0.8)','rgba(120,150,220,0.7)','rgba(90,120,200,0.7)');
       break;
     case 'wall-medium':
-      isoBlock(col,row, 0,0.1,'#dab84a','#b89030','#906810');
+      sandBlock(col,row, 0,0.1,'#dab84a','#b89030','#906810');
       isoBlock(col,row, 0.1,0.5,'rgba(180,200,255,0.8)','rgba(120,150,220,0.7)','rgba(90,120,200,0.7)');
       isoBlock(col,row, 0.6,0.5,'rgba(180,200,255,0.8)','rgba(120,150,220,0.7)','rgba(90,120,200,0.7)');
       isoBlock(col+0.05,row+0.05, 1.1,0.28,'rgba(200,220,255,0.8)','rgba(140,170,240,0.7)','rgba(110,140,220,0.7)');
       isoBlock(col+0.55,row+0.05, 1.1,0.28,'rgba(200,220,255,0.8)','rgba(140,170,240,0.7)','rgba(110,140,220,0.7)');
       break;
     case 'wall-tall':
-      isoBlock(col,row, 0,0.1,'#dab84a','#b89030','#906810');
+      sandBlock(col,row, 0,0.1,'#dab84a','#b89030','#906810');
       isoBlock(col,row, 0.1,0.5,'rgba(180,200,255,0.8)','rgba(120,150,220,0.7)','rgba(90,120,200,0.7)');
       isoBlock(col,row, 0.6,0.5,'rgba(180,200,255,0.8)','rgba(120,150,220,0.7)','rgba(90,120,200,0.7)');
       isoBlock(col,row, 1.1,0.5,'rgba(180,200,255,0.8)','rgba(120,150,220,0.7)','rgba(90,120,200,0.7)');
