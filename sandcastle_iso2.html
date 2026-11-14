@@ -751,6 +751,16 @@ const MELT_FW     = 768, MELT_FH = 608;   // one frame in the sheet, px
 const MELT_AX     = 384, MELT_AY = 272;   // the point inside a frame that sits on iso(3, 3, 0), px
 const MELT_SCALE  = 2;                    // sheet px per game px at zoom 1
 const MELT_STAGES = 10;
+// Flags: tile (relative to the castle's back corner), colour, and the sand height under the pole at each stage
+// (game z units, from castle_melt.json "flags"). A flag sinks with its tower and drops once the tower has slumped.
+const MELT_FLAGS = [
+  { c: 0, r: 0, color: '#cc2020', z: [1.9, 1.9, 1.9, 1.9, 1.9, 1.9, 1.88, 1.43, 0.63, 0.57] },
+  { c: 1, r: 1, color: '#cc2020', z: [2.0, 2.0, 2.0, 2.0, 2.0, 1.85, 1.2, 0.95, 0.95, 0.95] },
+  { c: 3, r: 0, color: '#d4a010', z: [1.9, 1.9, 1.9, 1.9, 1.82, 1.06, 0.54, 0.54, 0.54, 0.54] },
+  { c: 0, r: 3, color: '#cc2020', z: [1.9, 1.9, 1.9, 1.9, 1.79, 0.94, 0.55, 0.55, 0.55, 0.55] },
+  { c: 3, r: 3, color: '#d4a010', z: [1.9, 1.9, 1.85, 1.24, 0.57, 0.56, 0.56, 0.56, 0.56, 0.56] },
+];
+const MELT_FLAG_STANDS = 0.8;             // a flag stays up while its tower keeps this share of its height
 const MELT_EASE   = 0.03;                 // ← TUNE: how quickly the castle sags to its new level after a hit
 const meltImg = new Image();
 let meltReady = false;
@@ -762,7 +772,7 @@ meltBlend.width = MELT_FW; meltBlend.height = MELT_FH;
 const meltBlendCtx = meltBlend.getContext('2d');
 let meltBlendKey = -1;
 
-function drawCastleSprite() {
+function drawCastleSprite(t) {
   // rest on a whole stage (a clean picture); the two stages only mix while it is sagging from one to the next
   const want = Math.round((1 - Math.max(0, Math.min(1, castleHP / CASTLE_MAX_HP))) * (MELT_STAGES - 1));
   castleMeltPos += (want - castleMeltPos) * MELT_EASE;
@@ -788,10 +798,21 @@ function drawCastleSprite() {
   }
   const a = iso(3, 3, 0), k = camZoom / MELT_SCALE;
   ctx.drawImage(meltBlend, a.x - MELT_AX * k, a.y - MELT_AY * k, MELT_FW * k, MELT_FH * k);
+  // flags, back to front: each rides its tower down and fades out as the tower slumps
+  const fi = Math.min(MELT_STAGES - 1, Math.floor(castleMeltPos)), fn = Math.min(MELT_STAGES - 1, fi + 1), ff = castleMeltPos - fi;
+  for (const fl of MELT_FLAGS) {
+    const up0 = fl.z[fi] >= fl.z[0] * MELT_FLAG_STANDS ? 1 : 0, up1 = fl.z[fn] >= fl.z[0] * MELT_FLAG_STANDS ? 1 : 0;
+    const alpha = up0 * (1 - ff) + up1 * ff;
+    if (alpha <= 0.01) continue;
+    const a0 = ctx.globalAlpha;
+    ctx.globalAlpha = a0 * alpha;
+    drawIsoFlag(3 + fl.c, 3 + fl.r, fl.z[fi] * (1 - ff) + fl.z[fn] * ff, fl.color, t);
+    ctx.globalAlpha = a0;
+  }
 }
 
 function drawCastle(t) {
-  if (meltReady) { drawCastleSprite(); return; }   // sprite castle; below is the fallback
+  if (meltReady) { drawCastleSprite(t); return; }   // sprite castle; below is the fallback
   const BC = 3, BR = 3;
 
   for(let dc=0;dc<4;dc++) for(let dr=0;dr<4;dr++)
