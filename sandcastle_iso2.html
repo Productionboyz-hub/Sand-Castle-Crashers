@@ -741,7 +741,57 @@ function drawShoreFoamBand(t) {
   ctx.restore();
 }
 
+// ── CASTLE SPRITE (melt run) ──────────────────────────────────────
+// Pre-rendered in Blender (tools/blender): one sheet of MELT_STAGES frames, 0 = whole castle, last = a low
+// mound of wet sand. The stage follows castle health; a change of stage is cross-faded, so it sags smoothly.
+// If the image is missing or still loading, drawCastle() draws the old code-drawn castle instead.
+// These numbers come from castle_melt.json - change them if the sheet is re-rendered at another size or count.
+const MELT_SRC    = 'assets/sprites/castle_melt.png';
+const MELT_FW     = 768, MELT_FH = 608;   // one frame in the sheet, px
+const MELT_AX     = 384, MELT_AY = 272;   // the point inside a frame that sits on iso(3, 3, 0), px
+const MELT_SCALE  = 2;                    // sheet px per game px at zoom 1
+const MELT_STAGES = 10;
+const MELT_EASE   = 0.03;                 // ← TUNE: how quickly the castle sags to its new level after a hit
+const meltImg = new Image();
+let meltReady = false;
+meltImg.onload = function () { meltReady = meltImg.width >= MELT_FW && meltImg.height >= MELT_FH; };
+meltImg.src = MELT_SRC;
+let castleMeltPos = 0;                    // melt stage showing now (0..MELT_STAGES-1, fractional), eased toward castle health
+const meltBlend = document.createElement('canvas');   // the two neighbouring stages, mixed
+meltBlend.width = MELT_FW; meltBlend.height = MELT_FH;
+const meltBlendCtx = meltBlend.getContext('2d');
+let meltBlendKey = -1;
+
+function drawCastleSprite() {
+  // rest on a whole stage (a clean picture); the two stages only mix while it is sagging from one to the next
+  const want = Math.round((1 - Math.max(0, Math.min(1, castleHP / CASTLE_MAX_HP))) * (MELT_STAGES - 1));
+  castleMeltPos += (want - castleMeltPos) * MELT_EASE;
+  if (Math.abs(want - castleMeltPos) < 0.002) castleMeltPos = want;
+  const key = Math.round(castleMeltPos * 40);          // re-mix only when the level has visibly moved
+  if (key !== meltBlendKey) {
+    meltBlendKey = key;
+    const pos = key / 40, i = Math.min(MELT_STAGES - 1, Math.floor(pos)), f = pos - i;
+    const cols = Math.max(1, Math.round(meltImg.width / MELT_FW));
+    const frame = function (n) { meltBlendCtx.drawImage(meltImg, (n % cols) * MELT_FW, Math.floor(n / cols) * MELT_FH, MELT_FW, MELT_FH, 0, 0, MELT_FW, MELT_FH); };
+    meltBlendCtx.globalCompositeOperation = 'source-over';
+    meltBlendCtx.globalAlpha = 1;
+    meltBlendCtx.clearRect(0, 0, MELT_FW, MELT_FH);
+    meltBlendCtx.globalAlpha = 1 - f;
+    frame(i);
+    if (f > 0 && i + 1 < MELT_STAGES) {
+      meltBlendCtx.globalCompositeOperation = 'lighter';   // adds, so the two stages cross-fade exactly
+      meltBlendCtx.globalAlpha = f;
+      frame(i + 1);
+    }
+    meltBlendCtx.globalCompositeOperation = 'source-over';
+    meltBlendCtx.globalAlpha = 1;
+  }
+  const a = iso(3, 3, 0), k = camZoom / MELT_SCALE;
+  ctx.drawImage(meltBlend, a.x - MELT_AX * k, a.y - MELT_AY * k, MELT_FW * k, MELT_FH * k);
+}
+
 function drawCastle(t) {
+  if (meltReady) { drawCastleSprite(); return; }   // sprite castle; below is the fallback
   const BC = 3, BR = 3;
 
   for(let dc=0;dc<4;dc++) for(let dr=0;dr<4;dr++)
@@ -2340,6 +2390,7 @@ function drawGameOver() {
 canvas.addEventListener('click', e => {
   if (!gameOver) return;
   castleHP  = CASTLE_MAX_HP;
+  castleMeltPos = 0;
   gameOver  = false;
   waveNumber = 1;
   score      = 0;
@@ -2363,6 +2414,7 @@ canvas.addEventListener('click', e => {
 canvas.addEventListener('touchend', e => {
   if (!gameOver) return;
   castleHP  = CASTLE_MAX_HP;
+  castleMeltPos = 0;
   gameOver  = false;
   waveNumber = 1;
   score      = 0;
