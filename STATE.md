@@ -165,6 +165,28 @@ Sixth commit, 2026-11-13 - cleaner truck size (NOT water work; on this
   only required to read no taller than 30 (100 > 60 > 30 still strict).
   Not checked on a device or at phone sizes.
   NEXT for this work: J looks at the walls on PC.
+  Beach reference + foam/shallows (2026-11-15): J pushed reference.beach/
+  (1 photo, 2 clips, ~6 MB; footage filmed off a Google TV screensaver -
+  reference only, nothing from it goes in the game). J chose foam and
+  shallows first. patch_water11.py (tools/water-v3), DRAWING ONLY:
+  foam is a wide band of lace - a web of white strands with water in the
+  holes, solid lumpy lip at the edge, thinning over FOAM_DEPTH (2.6)
+  tiles, deeper behind a fresh run-up, faint lace drifting over the
+  shallows. Strands drawn at full screen res (new section FOAM LAYER:
+  tileable lace field, thresholded per pixel; the low-res texture was too
+  coarse - it gave blocky mush). Shallows: clear green-turquoise
+  (SHALLOW_ALPHA 0.30, opaque after SHALLOW_CLEAR 4.5 tiles, was 1.5),
+  sand under water darkened (SEABED_TINT), dark weed/rock patches
+  (worked out once per zoom). No new game state, no restart-list change.
+  Cost (headless, median per water build, builds run every 2nd frame):
+  desktop 8.7 -> 13.6 ms, iPad 11.6 -> 16 ms, iPhone 7.3 -> 8.9 ms. Not
+  measured on a real device - watch for stutter on the iPad.
+  Tests: probe_foam.cjs 10/10 (4 of 10 FAIL on the previous commit);
+  probe_grid, probe_block, probe_waves, probe_sizes, probe_trench,
+  probe_truck, test_surge3 all PASS; castle 10/10, walls 11/11.
+  Not done from the reference list: scalloped wave edge, wet-sand band
+  after backwash, warmer peach sand colour.
+  NEXT for this work: J looks at the water on PC; then the edge shape.
   Open: image is heavy for phones; the water branch's
   own castle melt (castleCutZ / castleShown) is now only the fallback and
   should be unified; sprite sizes are constants (MELT_*), re-render only

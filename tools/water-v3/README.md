@@ -17,12 +17,14 @@ soccer-app repo, where the prototype was first built (handoff commit e9868e9).
 | `patch_water8.py` | Applied on top of patch 7. Wave SIZE matters: small waves part-fill a moat and it dries fast, big waves fill it and it dries slowly; ordinary waves do a little damage (scaled by size, defend phase only, same locked chain). Knobs: `SWASH_MOAT_DMG`, `SWASH_WALL_DMG`, `SWASH_CASTLE_HITS`, `MOAT_FILL_MIN`, `MOAT_DRY_SMALL/BIG`. |
 | `patch_water9.py` | Applied on top of patch 8. Rising water in the moat (drawing only): moats and the castle ring are sunken trenches with inner walls and a floor; the water surface climbs the walls as it fills and drops as it dries. Knobs: `TRENCH_DEPTH`, `TRENCH_RING_DEPTH`, `TRENCH_RIM_GAP`. |
 | `patch_truck10.py` | Applied on top of patch 9. Not water work: the cleaner truck now scales with zoom and is `TRUCK_SCALE` (2) times bigger. Drawing only. |
+| `patch_water11.py` | Applied on top of the combined `feature/sprites-water` build (not part of the main rebuild chain below). Lacy foam and see-through shallows, from J's beach clips in `reference.beach/`. Foam strands are drawn at full screen resolution (section FOAM LAYER, a tileable lace field looked up and thresholded); the low-res water texture keeps a milky body under thick foam. Shallows: clear green-turquoise over darker, wet-looking sand, with dark patches on the bottom. Drawing only. Knobs: `SHALLOW_CLEAR`, `SHALLOW_ALPHA`, `SEABED_PATCH`, `SEABED_TINT`, `FOAM_DEPTH`, `FOAM_LACE`, `FOAM_RESIDUAL`, `FOAM_FLOW_SLOPE`. |
 | `test_surge3.cjs` | 15 Playwright gameplay checks (moat/wall/castle damage, barrier, pour, dry, melt, build-phase safety). |
 | `probe_block.cjs` | Fails if phone water is much blockier than desktop. |
 | `probe_grid.cjs` | Fails if the tile grid shows through the shallows. |
 | `probe_waves.cjs` | Wave behaviour: no banner, big wave crosses the castle side to side, swash fans out, speeds vary, backwash slows an incoming wave. |
 | `probe_trench.cjs` | Rising water: the surface sits lower in deeper moats when half full and just below the rim when full; same for the castle ring. Fails on the build before patch 9. |
 | `probe_truck.cjs` | Truck size: scales with zoom, and is sized against a tourist. Fails on the build before patch 10. |
+| `probe_foam.cjs` | Foam and shallows: a bright lip at the edge, lace (strands with holes) behind it thinning with distance, no foam on open water, see-through shallows turning opaque further out. Desktop and iPhone. 4 of 10 checks fail on the build before patch 11. |
 | `probe_sizes.cjs` | Wave size: small vs large wave damage on moat / wall / castle, part-fill, fast vs slow drying, no damage in the build phase. |
 
 ## Rebuild check (any machine with Python 3)
@@ -55,6 +57,7 @@ node probe_waves.cjs http://127.0.0.1:PORT/
 node probe_sizes.cjs http://127.0.0.1:PORT/
 node probe_trench.cjs http://127.0.0.1:PORT/
 node probe_truck.cjs  http://127.0.0.1:PORT/
+node probe_foam.cjs   http://127.0.0.1:PORT/
 ```
 
 Each exits 0 on pass and 1 on fail. `test_surge3.cjs` fails on main (no wave
