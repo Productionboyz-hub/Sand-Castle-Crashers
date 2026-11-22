@@ -187,6 +187,39 @@ Sixth commit, 2026-11-13 - cleaner truck size (NOT water work; on this
   Not done from the reference list: scalloped wave edge, wet-sand band
   after backwash, warmer peach sand colour.
   NEXT for this work: J looks at the water on PC; then the edge shape.
+  Castle crumbles in four sections (2026-11-22, J's ask): the castle no
+  longer melts; it falls a quarter at a time as castle health passes
+  75 / 50 / 25 / 0 %, sea side first (front, right, left, back). Each
+  fall ~0.8 s (10 frames at 12 fps, CRUMBLE_TICKS); between falls it
+  rests still. A big hit past two marks plays the falls one after the
+  other. Flags on a falling quarter fade out over its first 3 frames.
+  Blender: crumble_castle.py --only sections - one rigid-body run, each
+  quarter kinematic until its turn then shoved outward (--section-push
+  0.45 of --push); standing quarters drawn as whole blocks (no crack
+  lines); fallen chunks go to sand by the end of their own fall; one
+  heap per quarter, merging into one low spread at the end. Blocks are
+  cut along col 2 / row 2 so each lies in one quarter.
+  Sheet: assets/sprites/castle_sections.webp, 0.32 MB (PNG would be
+  6 MB): 41 frames at scale 1.5, 7 per row (4032 x 2736 px, under the
+  4096 px / 16.7 MP limits of iPad Safari). New: --webp option in
+  render_sprites.py; wrapper -Only sections / -SectionFrames.
+  Game: new section CASTLE CRUMBLE above drawCastle(). Order there:
+  crumble sheet -> melt run (now only loaded if the crumble sheet fails)
+  -> code-drawn castle. New persistent state castleFallen,
+  castleFallTick is in BOTH restart reset lists. Drawing only: castle HP
+  and damage untouched. deploy_scc.ps1 asset list adds
+  castle_sections.webp (castle_melt.png kept as the backup).
+  Tests: probe_castle_crumble.cjs 11/11 (crashes = FAIL on the previous
+  commit); probe_castle_sprite 10/10 when served without the crumble
+  sheet (it tests the backup now); walls 11/11; test_surge3, probe_foam,
+  grid, block, waves, sizes, trench, truck all PASS. Wrapper run under
+  pwsh here (bpy standing in for blender.exe) reproduces the committed
+  sheet pixel for pixel - NOT yet run on J's PC.
+  Look notes: the heaps spill over the castle ring trench (drawn on top
+  of it). The standing castle shows block seams (it is built of blocks),
+  unlike the smooth melt castle.
+  NEXT for this work: J looks at the falls (PC or the iPad link, which
+  still shows the previous build until republished).
   Open: image is heavy for phones; the water branch's
   own castle melt (castleCutZ / castleShown) is now only the fallback and
   should be unified; sprite sizes are constants (MELT_*), re-render only

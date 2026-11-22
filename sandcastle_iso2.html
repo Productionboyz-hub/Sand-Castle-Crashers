@@ -1481,7 +1481,8 @@ const MELT_EASE   = 0.03;                 // ← TUNE: how quickly the castle sa
 const meltImg = new Image();
 let meltReady = false;
 meltImg.onload = function () { meltReady = meltImg.width >= MELT_FW && meltImg.height >= MELT_FH; };
-meltImg.src = MELT_SRC;
+// not loaded up front: the castle crumbles in sections now (CASTLE CRUMBLE); the melt run is only the backup
+// if that sheet fails to load (crumbleImg.onerror sets meltImg.src)
 let castleMeltPos = 0;                    // melt stage showing now (0..MELT_STAGES-1, fractional), eased toward castle health
 const meltBlend = document.createElement('canvas');   // the two neighbouring stages, mixed
 meltBlend.width = MELT_FW; meltBlend.height = MELT_FH;
@@ -1527,8 +1528,66 @@ function drawCastleSprite(t) {
   }
 }
 
+// ── CASTLE CRUMBLE (four sections) ────────────────────────────────
+// Pre-rendered in Blender (tools/blender/crumble_castle.py --only sections): the castle falls a quarter at a time
+// as its health passes 75 / 50 / 25 / 0 %, sea side first (front, right, left, back). Each section's chunks
+// collapse and turn to a heap of sand; the rest stays standing until its turn. Between falls it rests still.
+// Sheet: frame 0 = the whole castle, then CRUMBLE_FRAMES frames per section; a section's last frame is the castle
+// at rest after it has gone. If the sheet fails to load, the melt run (above) is loaded instead.
+// These numbers come from castle_sections.json - change them if the sheet is re-rendered at another size or count.
+const CRUMBLE_SRC    = 'assets/sprites/castle_sections.webp';
+const CRUMBLE_FW     = 576, CRUMBLE_FH = 456;   // one frame in the sheet, px
+const CRUMBLE_AX     = 288, CRUMBLE_AY = 204;   // the point inside a frame that sits on iso(3, 3, 0), px
+const CRUMBLE_SCALE  = 1.5;                     // sheet px per game px at zoom 1
+const CRUMBLE_COLS   = 7;                       // frames per sheet row
+const CRUMBLE_FRAMES = 10;                      // frames in each section's fall
+const CRUMBLE_AT     = [75, 50, 25, 0];         // castle health each section falls at: front, right, left, back
+const CRUMBLE_TICKS  = 5;                       // ← TUNE: game frames per crumble frame (5 = 12 fps, a fall takes ~0.8 s)
+// Flags: tile (relative to the castle's back corner), colour, height, and the section they stand on.
+const CRUMBLE_FLAGS = [
+  { c: 0, r: 0, color: '#cc2020', z: 1.9, section: 3 },
+  { c: 1, r: 1, color: '#cc2020', z: 2.0, section: 3 },
+  { c: 3, r: 0, color: '#d4a010', z: 1.9, section: 1 },
+  { c: 0, r: 3, color: '#cc2020', z: 1.9, section: 2 },
+  { c: 3, r: 3, color: '#d4a010', z: 1.9, section: 0 },
+];
+const crumbleImg = new Image();
+let crumbleReady = false;
+crumbleImg.onload = function () { crumbleReady = crumbleImg.width >= CRUMBLE_FW * CRUMBLE_COLS && crumbleImg.height >= CRUMBLE_FH; };
+crumbleImg.onerror = function () { meltImg.src = MELT_SRC; };   // no crumble sheet: fall back to the melt run
+crumbleImg.src = CRUMBLE_SRC;
+let castleFallen = 0;                           // sections that have fallen and finished (0..4)
+let castleFallTick = -1;                        // game frames into the section falling now; -1 = none falling
+
+function crumbleWanted() { let n = 0; for (const h of CRUMBLE_AT) if (castleHP <= h) n++; return n; }
+
+function drawCastleCrumble(t) {
+  // one section at a time: if a big hit passes two marks, the second falls after the first has finished
+  if (castleFallTick < 0 && castleFallen < crumbleWanted()) castleFallTick = 0;
+  let frame = castleFallen * CRUMBLE_FRAMES, fallF = -1;   // at rest: the last frame of the last section to fall (0 = whole)
+  if (castleFallTick >= 0) {
+    fallF = Math.floor(castleFallTick / CRUMBLE_TICKS);
+    if (fallF >= CRUMBLE_FRAMES) { castleFallen++; castleFallTick = -1; fallF = -1; frame = castleFallen * CRUMBLE_FRAMES; }
+    else { frame = 1 + castleFallen * CRUMBLE_FRAMES + fallF; castleFallTick++; }
+  }
+  const a = iso(3, 3, 0), k = camZoom / CRUMBLE_SCALE;
+  ctx.drawImage(crumbleImg, (frame % CRUMBLE_COLS) * CRUMBLE_FW, Math.floor(frame / CRUMBLE_COLS) * CRUMBLE_FH, CRUMBLE_FW, CRUMBLE_FH,
+                a.x - CRUMBLE_AX * k, a.y - CRUMBLE_AY * k, CRUMBLE_FW * k, CRUMBLE_FH * k);
+  // flags stand while their section stands, and drop out over the first frames of its fall
+  for (const fl of CRUMBLE_FLAGS) {
+    if (fl.section < castleFallen) continue;
+    const alpha = fl.section === castleFallen && fallF >= 0 ? 1 - fallF / 3 : 1;
+    if (alpha <= 0.01) continue;
+    const a0 = ctx.globalAlpha;
+    ctx.globalAlpha = a0 * alpha;
+    drawIsoFlag(3 + fl.c, 3 + fl.r, fl.z, fl.color, t);
+    ctx.globalAlpha = a0;
+  }
+}
+
 function drawCastle(t) {
-  if (meltReady) { drawCastleSprite(t); return; }   // sprite castle; below is the fallback
+  if (crumbleReady) { drawCastleCrumble(t); return; }   // castle that crumbles in sections
+  if (meltReady) { drawCastleSprite(t); return; }   // backup: the melt run; below is the code-drawn fallback
   const BC = 3, BR = 3;
 
   for(let dc=0;dc<4;dc++) for(let dr=0;dr<4;dr++)
@@ -3223,6 +3282,7 @@ canvas.addEventListener('click', e => {
   if (!gameOver) return;
   castleHP  = CASTLE_MAX_HP;
   castleMeltPos = 0;
+  castleFallen = 0; castleFallTick = -1;
   gameOver  = false;
   waveNumber = 1;
   score      = 0;
@@ -3249,6 +3309,7 @@ canvas.addEventListener('touchend', e => {
   if (!gameOver) return;
   castleHP  = CASTLE_MAX_HP;
   castleMeltPos = 0;
+  castleFallen = 0; castleFallTick = -1;
   gameOver  = false;
   waveNumber = 1;
   score      = 0;
