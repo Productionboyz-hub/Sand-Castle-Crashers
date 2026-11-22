@@ -3,6 +3,7 @@
 #   .\tools\blender\render_sprites.ps1                 # full quality (20 crumble frames + 10 melt stages + walls)
 #   .\tools\blender\render_sprites.ps1 -Only melt      # just the castle melt stages
 #   .\tools\blender\render_sprites.ps1 -Only walls     # just the three walls and their melt
+#   .\tools\blender\render_sprites.ps1 -Only sections  # just the castle crumbling a quarter at a time (the game's castle)
 #   .\tools\blender\render_sprites.ps1 -Quick          # fast draft to check it runs
 #   .\tools\blender\render_sprites.ps1 -Seed 11        # a different collapse
 #
@@ -14,9 +15,10 @@ param(
     [int]$Frames     = 20,      # frames in the crumble animation
     [int]$Samples    = 48,      # render quality
     [int]$Seed       = 7,
-    [ValidateSet("all", "crumble", "melt", "walls")][string]$Only = "all",
+    [ValidateSet("all", "crumble", "melt", "walls", "sections")][string]$Only = "all",
     [int]$MeltStages = 10,     # castle melt stages, from whole castle to low mound
     [int]$WallStages = 8,      # melt stages per wall, from whole wall to low mound
+    [int]$SectionFrames = 10,  # frames in each quarter's crumble (sections run)
     [switch]$Gpu,               # render on the graphics card if Cycles is set up for it
     [switch]$SaveBlend,         # also save out\crumble.blend to open in Blender
     [switch]$Quick              # draft: half size, few samples
@@ -39,7 +41,26 @@ try {
     $outDir = Join-Path $PSScriptRoot $Out
     $dest = Join-Path $PSScriptRoot "..\..\assets\sprites"
     Write-Host "Blender: $Blender"
-    if ($Only -ne "walls") {
+    if (($Only -eq "all") -or ($Only -eq "sections")) {
+        # the castle the game draws: it crumbles a quarter at a time. Rendered at 3/4 of -Scale, saved as WebP (small)
+        $secScale = $Scale * 0.75
+        $blArgs = @("-b", "--python-exit-code", "1", "-P", "crumble_castle.py", "--",
+            "--out", $Out, "--scale", $secScale, "--samples", $Samples, "--seed", $Seed, "--only", "sections",
+            "--section-frames", $SectionFrames, "--cols", 7, "--webp", 82) + $extra
+        & $Blender @blArgs
+        if ($LASTEXITCODE -ne 0) { throw "Blender exited with code $LASTEXITCODE" }
+        $sections = Join-Path $outDir "castle_sections.webp"
+        if (Test-Path $sections) {
+            if ($Scale -ne 2 -or $SectionFrames -ne 10 -or $Seed -ne 7) {
+                Write-Host "Crumbling castle not copied into the game: it expects -Scale 2, -SectionFrames 10 and -Seed 7 (see CRUMBLE_ constants in sandcastle_iso2.html)."
+            } else {
+                New-Item -ItemType Directory -Force -Path $dest | Out-Null
+                Copy-Item $sections (Join-Path $dest "castle_sections.webp") -Force
+                Write-Host "Copied castle_sections.webp into assets\sprites for the game."
+            }
+        }
+    }
+    if (($Only -ne "walls") -and ($Only -ne "sections")) {
         $castleOnly = $Only
         $blArgs = @("-b", "--python-exit-code", "1", "-P", "crumble_castle.py", "--",
             "--out", $Out, "--scale", $Scale, "--frames", $Frames, "--samples", $Samples,

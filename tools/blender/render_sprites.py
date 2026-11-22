@@ -50,6 +50,7 @@ def add_args(ap):
     ap.add_argument('--samples', type=int, default=48, help='Cycles samples per pixel')
     ap.add_argument('--device', default='CPU', choices=['CPU', 'GPU'], help='Cycles device')
     ap.add_argument('--cols', type=int, default=0, help='sheet columns (0 = automatic)')
+    ap.add_argument('--webp', type=int, default=0, help='also write the sheet as WebP at this quality (1-100; 0 = PNG only). Much smaller files')
     return ap
 
 
@@ -168,6 +169,9 @@ def pack_sheet(paths, names, out_png, out_json, cfg, extra=None):
     img.filepath_raw = out_png
     img.file_format = 'PNG'
     img.save()
+    if getattr(cfg, 'webp', 0):
+        img.file_format = 'WEBP'                             # same pixels, lossy: a fraction of the PNG's size
+        img.save(filepath=os.path.splitext(out_png)[0] + '.webp', quality=int(cfg.webp), save_copy=True)
     bpy.data.images.remove(img)
     meta = {
         'image': os.path.basename(out_png),

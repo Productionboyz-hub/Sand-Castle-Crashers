@@ -7,9 +7,10 @@ No add-ons, no extra installs: the scripts only use what ships inside Blender (t
 |---|---|
 | `render_sprites.py` | Renders any `.blend` to a sprite sheet PNG + JSON. Sets the camera to match the game's `iso()` projection, transparent background, one fixed lighting rig. Also used as a library by the crumble test. |
 | `crumble_castle.py` | The crumble test. Builds a sandcastle on the game's 4 x 4 footprint, splits it into chunks, collapses it with rigid-body physics. To read as sand, a chunk rounds off and shrinks away once it moves, while a heap of loose sand rises underneath. Outputs a 20-frame crumble animation and a run of melt stages (default 10): the castle as one mass of wet sand, sagging from the sea side until it is a low mound. Pick the melt stage by castle health. |
+| `crumble_castle.py --only sections` | The castle the game draws: it crumbles a quarter at a time as castle health passes 75 / 50 / 25 / 0 % (front, right, left, back - sea side first). One rigid-body run: each quarter is held still until its turn, then shoved outward; its chunks go to sand and leave a heap; the rest stands, drawn as whole blocks so no crack lines show. Sheet `castle_sections.webp` (and `.png`): frame 0 = whole castle, then 10 frames per quarter, each ending at rest. Knobs: `--section-frames`, `--section-push`, `--settle`. |
 | `melt_walls.py` | The three placeable walls (small, medium, tall), made the same way as the castle melt so they match it: same sand, light and camera. One sheet, a row per wall, 8 melt stages each (whole wall to low mound). Pick the stage by the wall's health. |
 | `render_sprites.ps1` | Windows wrapper: one command runs the crumble test and the walls. |
-| `probe_castle_sprite.cjs`, `probe_wall_sprites.cjs` | Headless checks that the game draws the castle and the walls from the sheets (and falls back to code-drawn ones without them). |
+| `probe_castle_crumble.cjs`, `probe_castle_sprite.cjs`, `probe_wall_sprites.cjs` | Headless checks that the game draws the castle and the walls from the sheets (and falls back to code-drawn ones without them). |
 
 ## Run it (Windows, PowerShell, from the repo folder)
 
@@ -20,10 +21,12 @@ No add-ons, no extra installs: the scripts only use what ships inside Blender (t
 
 Output lands in `tools\blender\out\` (ignored by git):
 `castle_crumble.png/.json`, `castle_melt.png/.json`, `walls_melt.png/.json`, and `frames\`.
-The two sheets the game loads are also copied into `assets\sprites\` (`castle_melt.png`, `walls_melt.png`).
+The sheets the game loads are also copied into `assets\sprites\` (`castle_sections.webp`, `walls_melt.png`, and
+`castle_melt.png`, which the game only loads if the crumbling castle fails to load).
+`--webp <quality>` (render_sprites.py) also writes a sheet as WebP: the crumbling castle is 0.3 MB as WebP, 6 MB as PNG.
 
 Useful switches: `-Seed 11` (a different collapse), `-Frames 24`, `-Scale 1` (half-size sheet),
-`-Only melt`, `-Only walls`, `-MeltStages 16`, `-WallStages 8`, `-SaveBlend` (writes `out\crumble.blend` to open in Blender), `-Gpu`.
+`-Only melt`, `-Only walls`, `-Only sections`, `-SectionFrames 10`, `-MeltStages 16`, `-WallStages 8`, `-SaveBlend` (writes `out\crumble.blend` to open in Blender), `-Gpu`.
 
 Look knobs (pass to `crumble_castle.py` after `--`): `--melt-stages`, `--melt-frames` (how fast a moving chunk turns
 to sand), `--clumps` (damp lumps left on the heap), `--mound-height`, `--mound-radius`, `--push`,

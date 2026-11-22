@@ -231,8 +231,9 @@ def voronoi_chunks(lo, hi, n, rng):
     return out
 
 
-def build_castle(scene, seed, fractured=True):
-    """Create every chunk as its own object (fractured=False: one object per block). Returns the objects."""
+def build_castle(scene, seed, fractured=True, blocks=None):
+    """Create every chunk as its own object (fractured=False: one object per block). Returns the objects.
+    blocks: the block list to build (default castle_blocks()). Each object gets ob['block'] = its block's index."""
     rng = random.Random(seed)
     mats = sand_materials()
     lump_tex = bpy.data.textures.new('Lump', 'CLOUDS')
@@ -240,7 +241,7 @@ def build_castle(scene, seed, fractured=True):
     coll = bpy.data.collections.new('Castle')
     scene.collection.children.link(coll)
     chunks = []
-    for (c0, c1, r0, r1, z0, z1, n) in castle_blocks():
+    for bi, (c0, c1, r0, r1, z0, z1, n) in enumerate(blocks or castle_blocks()):
         lo = Vector((c0, -r1, z0 * ZU))
         hi = Vector((c1, -r0, z1 * ZU))
         for bm, cen in voronoi_chunks(lo, hi, n if fractured else 1, rng):
@@ -254,6 +255,7 @@ def build_castle(scene, seed, fractured=True):
             ob = bpy.data.objects.new('chunk', me)
             ob.location = cen
             ob['volume'] = vol
+            ob['block'] = bi
             coll.objects.link(ob)
             # soft, patted-down edges (no hard outlines), and the handles the crumble animates
             bev = ob.modifiers.new('SoftEdge', 'BEVEL')
@@ -332,7 +334,7 @@ def grow_mound(mound, first, last):
         mound.keyframe_insert('scale', frame=f)
 
 
-def add_physics(scene, chunks, cfg, is_active):
+def add_physics(scene, chunks, cfg, is_active, bake=True):
     """Rigid bodies: chunks for which is_active(ob) is true fall, the rest stay put. Bakes the simulation."""
     if scene.rigidbody_world is None:
         bpy.ops.rigidbody.world_add()
@@ -389,11 +391,12 @@ def add_physics(scene, chunks, cfg, is_active):
     scene.frame_end = cfg.sim_frames
     rbw.point_cache.frame_start = 1
     rbw.point_cache.frame_end = cfg.sim_frames
-    with bpy.context.temp_override(scene=scene, point_cache=rbw.point_cache):
-        bpy.ops.ptcache.bake(bake=True)
+    if bake:
+        with bpy.context.temp_override(scene=scene, point_cache=rbw.point_cache):
+            bpy.ops.ptcache.bake(bake=True)
 
 
-def crumble_to_sand(scene, chunks, cfg, last):
+def crumble_to_sand(scene, chunks, cfg, last, late_for=None, late_spread=None):
     """Sand, not stone: from the moment a chunk starts to move it rounds off, goes lumpy and shrinks.
     and away to nothing, so what is left at the end is the heap of loose sand, never a pile of blocks.
     Only the look changes - the physics was baked with the full-size chunks."""
@@ -410,8 +413,16 @@ def crumble_to_sand(scene, chunks, cfg, last):
                 start[ob.name] = f
     late = int(1 + 0.12 * last)                               # chunks that never move slump as the heap covers them
     for ob in chunks:
-        t0 = start.get(ob.name, late + rng.randint(0, max(1, int(0.2 * last))))
+        lt = late_for(ob) if late_for else late
+        if lt is None and ob.name not in start:
+            continue                                          # stays standing for the whole run
+        spread = late_spread if late_spread is not None else int(0.2 * last)
+        t0 = start.get(ob.name, (lt or late) + rng.randint(0, max(1, spread)))
+        if late_for and lt is not None and t0 > lt + spread:  # sections run: a chunk that only slides later (knocked by a
+            t0 = lt + rng.randint(0, max(1, spread))          # later section) still goes to sand during its own fall
         span = int(cfg.melt_frames * (0.7 + 0.6 * rng.random()))
+        if late_for and lt is not None:                       # sections run: gone by the end of its section's fall
+            span = min(span, max(3, lt + cfg.step * (cfg.section_frames - 1) - 2 - t0))
         for mod, prop, v1 in (('Round', 'factor', 1.0), ('Lump', 'strength', 0.07)):
             m = ob.modifiers[mod]
             setattr(m, prop, 0.0)
@@ -423,6 +434,112 @@ def crumble_to_sand(scene, chunks, cfg, last):
         ob.scale = (0.001,) * 3
         ob.keyframe_insert('scale', frame=t0 + 1 + span)
     scene.frame_set(1)
+
+
+# Crumble in sections: the castle falls a quarter at a time as its health passes 75 / 50 / 25 / 0 %.
+# Sea side first. Each section is (name, col range, row range, health % it falls at).
+SECTIONS = (('front', (2, 4), (2, 4), 75), ('right', (2, 4), (0, 2), 50),
+            ('left', (0, 2), (2, 4), 25), ('back', (0, 2), (0, 2), 0))
+
+
+def section_blocks():
+    """castle_blocks() cut along col 2 and row 2, so every block lies in exactly one section. (block, section) pairs."""
+    out = []
+    for (c0, c1, r0, r1, z0, z1, n) in castle_blocks():
+        area = (c1 - c0) * (r1 - r0)
+        for k, (_nm, (sc0, sc1), (sr0, sr1), _hp) in enumerate(SECTIONS):
+            a0, a1, b0, b1 = max(c0, sc0), min(c1, sc1), max(r0, sr0), min(r1, sr1)
+            if a1 - a0 > 1e-6 and b1 - b0 > 1e-6:
+                out.append(((a0, a1, b0, b1, z0, z1, max(1, round(n * (a1 - a0) * (b1 - b0) / area))), k))
+    return out
+
+
+def section_of(ob):
+    """Which section a chunk belongs to, by where its centre sits on the footprint."""
+    c, r = ob.location.x, -ob.location.y
+    for k, (_n, (c0, c1), (r0, r1), _hp) in enumerate(SECTIONS):
+        if c0 <= c < c1 and r0 <= r < r1:
+            return k
+    return min(range(4), key=lambda k: abs(c - sum(SECTIONS[k][1]) / 2) + abs(r - sum(SECTIONS[k][2]) / 2))
+
+
+def render_sections(cfg, fdir, out):
+    """One rigid-body run: each section is held still (kinematic) until its turn, then let go with a shove outward.
+    Earlier rubble stays where it fell. Renders the whole castle, then cfg.section_frames frames per section; the
+    last frame of each section is the castle at rest after that section has gone."""
+    gap = cfg.step * (cfg.section_frames - 1) + cfg.settle    # physics frames from one section's fall to the next
+    rel = [2 + k * gap for k in range(4)]                     # frame each section is let go
+    cfg.sim_frames = rel[-1] + cfg.step * (cfg.section_frames - 1) + 2
+    scene = fresh_scene(cfg)
+    blocks = section_blocks()
+    chunks = build_castle(scene, cfg.seed, blocks=[bl for bl, _k in blocks])
+    sec = {ob.name: blocks[ob['block']][1] for ob in chunks}
+    # until a section falls it is drawn as whole blocks (no crack lines); its chunks take over the frame it falls
+    solids = build_castle(scene, cfg.seed, fractured=False, blocks=[bl for bl, _k in blocks])
+    for ob in solids:
+        ob.modifiers['Subdiv'].render_levels = 0
+        f = rel[blocks[ob['block']][1]]
+        ob.hide_render = False
+        ob.keyframe_insert('hide_render', frame=1)
+        ob.keyframe_insert('hide_render', frame=f - 1)
+        ob.hide_render = True
+        ob.keyframe_insert('hide_render', frame=f)
+    for ob in chunks:
+        f = rel[sec[ob.name]]
+        ob.hide_render = True
+        ob.keyframe_insert('hide_render', frame=1)
+        ob.keyframe_insert('hide_render', frame=f - 1)
+        ob.hide_render = False
+        ob.keyframe_insert('hide_render', frame=f)
+    push, cfg.push = cfg.push, 0.0                            # the shove is per section here, not one at the start
+    add_physics(scene, chunks, cfg, lambda ob: True, bake=False)
+    cfg.push = push
+    for ob in chunks:                                         # held in place until its section's turn
+        rb = ob.rigid_body
+        rb.kinematic = True
+        rb.keyframe_insert('kinematic', frame=1)
+        rb.keyframe_insert('kinematic', frame=rel[sec[ob.name]] - 1)
+        rb.kinematic = False
+        rb.keyframe_insert('kinematic', frame=rel[sec[ob.name]])
+    for k, (_n, (c0, c1), (r0, r1), _hp) in enumerate(SECTIONS):
+        # a short shove from the castle's middle toward this section, like a wave knocking it out
+        cx, cy = (c0 + c1) / 2, (r0 + r1) / 2
+        bpy.ops.object.effector_add(type='FORCE', location=(2 + (cx - 2) * 0.35, -(2 + (cy - 2) * 0.35), 0.05))
+        ff = bpy.context.object
+        ff.field.falloff_type = 'SPHERE'
+        ff.field.use_max_distance = True
+        ff.field.distance_max = 2.4
+        ff.field.strength = 0.0
+        ff.field.keyframe_insert('strength', frame=rel[k] - 1)
+        ff.field.strength = cfg.push * cfg.section_push
+        ff.field.keyframe_insert('strength', frame=rel[k])
+        ff.field.keyframe_insert('strength', frame=rel[k] + cfg.push_frames)
+        ff.field.strength = 0.0
+        ff.field.keyframe_insert('strength', frame=rel[k] + cfg.push_frames + 2)
+    rbw = scene.rigidbody_world
+    with bpy.context.temp_override(scene=scene, point_cache=rbw.point_cache):
+        bpy.ops.ptcache.bake(bake=True)
+    # sand, not stone: a chunk rounds off and shrinks away once it moves; one that never moves slumps after its
+    # section falls. Each section leaves its own heap of loose sand.
+    crumble_to_sand(scene, chunks, cfg, cfg.sim_frames, late_for=lambda ob: rel[sec[ob.name]] + 2,
+                    late_spread=cfg.step * (cfg.section_frames - 1) // 2)
+    for k, (_n, (c0, c1), (r0, r1), _hp) in enumerate(SECTIONS):
+        cx, cy = (c0 + c1) / 2, (r0 + r1) / 2
+        sz = (1.0, 0.85, 0.9, 1.1)[k]                         # each heap its own size, so they do not read as four copies
+        # heaps sit on their own quarter and run into each other, so the end is one low spread of sand
+        mound = add_mound(scene, (cx + (cx - 2) * 0.12, -(cy + (cy - 2) * 0.12)), cfg.mound_radius * 0.6 * sz,
+                          cfg.mound_height * 0.5 * sz * ZU, cfg.seed + 5 * k, max(4, cfg.clumps // 3))
+        grow_mound(mound, rel[k] + 1, rel[k] + int(0.9 * cfg.step * (cfg.section_frames - 1)))
+    if cfg.save_blend:
+        bpy.ops.wm.save_as_mainfile(filepath=os.path.join(out, 'sections.blend'))
+    paths = rs.render_frames(scene, [rel[0] - 1], fdir, 'sections_whole')
+    names = ['whole']
+    for k, (n, _c, _r, _hp) in enumerate(SECTIONS):
+        frames = [rel[k] + cfg.step * i for i in range(1, cfg.section_frames)]
+        frames.append(rel[k] + gap - 1 if k < 3 else cfg.sim_frames)   # last frame: settled
+        paths += rs.render_frames(scene, frames, fdir, 'sections_' + n)
+        names += ['%s_%02d' % (n, i) for i in range(len(frames))]
+    return paths, names, rel
 
 
 def fresh_scene(cfg):
@@ -449,7 +566,10 @@ def main():
     ap.add_argument('--mound-height', type=float, default=1.1, help='height of the final sand heap, in game z units')
     ap.add_argument('--mound-radius', type=float, default=2.9, help='radius of the final sand heap, in tiles')
     ap.add_argument('--melt-stages', type=int, default=10, help='how many melt stages to render, from whole castle to low mound')
-    ap.add_argument('--only', default='all', choices=['all', 'crumble', 'melt'], help='render just one part')
+    ap.add_argument('--only', default='all', choices=['all', 'crumble', 'melt', 'sections'], help='render just one part ("all" = crumble + melt; "sections" runs on its own)')
+    ap.add_argument('--section-frames', type=int, default=10, help='frames in each section\'s crumble (sections run)')
+    ap.add_argument('--section-push', type=float, default=0.45, help='shove per section, as a share of --push (sections run)')
+    ap.add_argument('--settle', type=int, default=30, help='physics frames the rubble gets to settle before the next section falls')
     ap.add_argument('--save-blend', action='store_true', help='also save crumble.blend so you can open the scene in Blender')
     # frame big enough for the 4x4 castle plus the sand it throws out; the castle's back corner sits at 192,136
     ap.set_defaults(frame_w=384, frame_h=304, anchor_x=192, anchor_y=136, cols=5)
@@ -493,6 +613,17 @@ def main():
                              # per flag: its tile and the sand height under it at each stage (game z units)
                              'flags': [{'col': c, 'row': r, 'z': [flag_heights(a, cfg.seed)[k] for a in amounts]}
                                        for k, (c, r) in enumerate(FLAG_SPOTS)]})
+    if cfg.only == 'sections':                                # its own run: the game wants it at --scale 1.5 --cols 7 --webp 82
+        # the castle falls a quarter at a time (SECTIONS): whole castle, then each section's crumble, ending at rest
+        paths, names, rel = render_sections(cfg, fdir, out)
+        n = cfg.section_frames
+        rs.pack_sheet(paths, names, os.path.join(out, 'castle_sections.png'), os.path.join(out, 'castle_sections.json'), cfg,
+                      extra={'kind': 'sections', 'footprint': {'cols': 4, 'rows': 4}, 'framesPerSection': n,
+                             'sections': [{'name': nm, 'cols': list(c), 'rows': list(r), 'fallsAtHealth': hp,
+                                           'first': 1 + k * n, 'last': (k + 1) * n}
+                                          for k, (nm, c, r, hp) in enumerate(SECTIONS)],
+                             'flags': [{'col': c, 'row': r, 'section': next(k for k, (_n, (c0, c1), (r0, r1), _h) in enumerate(SECTIONS)
+                                                                            if c0 <= c < c1 and r0 <= r < r1)} for (c, r) in FLAG_SPOTS]})
     print('[crumble_castle] done ->', out, flush=True)
 
 

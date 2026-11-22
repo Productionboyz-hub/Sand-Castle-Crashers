@@ -1,4 +1,6 @@
 // probe_castle_sprite.cjs <url-with-sprite> <url-without-sprite> : the melt-run castle in the game. Exit 1 on any FAIL.
+// Since the castle crumbles in sections (probe_castle_crumble.cjs), the melt run is only the backup: serve
+// <url-with-sprite> WITHOUT assets/sprites/castle_sections.webp (castle_melt.png present) so the melt run loads.
 const { chromium } = require('playwright');
 const [withUrl, withoutUrl] = process.argv.slice(2);
 let fail = 0;
